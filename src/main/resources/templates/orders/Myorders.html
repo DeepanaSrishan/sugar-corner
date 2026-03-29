@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>My Orders – Sugar Corner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <style>
+        :root{--brown-dark:#2C1810;--brown-mid:#5C3317;--brown-warm:#8B4513;--caramel:#C68642;
+            --cream:#FDF6EC;--cream-dark:#F5E6D0;--white:#FFFEF9;--text-dark:#1A0F08;
+            --text-muted:#7A5C45;--success:#27AE60;--error:#C0392B;--sidebar-w:260px;}
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text-dark);display:flex;min-height:100vh;}
+        .sidebar{width:var(--sidebar-w);background:linear-gradient(175deg,var(--brown-dark),var(--brown-mid));
+            position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;padding:32px 0;z-index:100;}
+        .sidebar-brand{text-align:center;padding:0 24px 32px;border-bottom:1px solid rgba(255,255,255,.1);}
+        .sidebar-brand .logo{font-size:38px;display:block;margin-bottom:8px;}
+        .sidebar-brand h2{font-family:'Playfair Display',serif;color:var(--cream);font-size:1.3rem;}
+        .sidebar-brand small{color:var(--caramel);font-size:.75rem;letter-spacing:1px;text-transform:uppercase;}
+        nav{flex:1;padding:8px 16px;}
+        .nav-section{font-size:.68rem;letter-spacing:1.5px;text-transform:uppercase;color:rgba(253,246,236,.4);padding:14px 12px 5px;}
+        .nav-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;margin-bottom:3px;
+            color:rgba(253,246,236,.8);font-size:.87rem;text-decoration:none;transition:all .2s;}
+        .nav-item:hover,.nav-item.active{background:rgba(196,134,66,.25);color:var(--cream);}
+        .nav-icon{font-size:16px;width:20px;text-align:center;}
+        .sidebar-footer{padding:0 16px 16px;}
+        .logout-btn{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;
+            color:rgba(253,246,236,.6);font-size:.85rem;text-decoration:none;border:1px solid rgba(255,255,255,.1);transition:all .2s;}
+        .logout-btn:hover{background:rgba(192,57,43,.25);color:#FF8A80;border-color:rgba(192,57,43,.4);}
+        .main{margin-left:var(--sidebar-w);flex:1;}
+        .topbar{background:var(--white);padding:18px 36px;border-bottom:1px solid var(--cream-dark);
+            display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;
+            box-shadow:0 2px 12px rgba(44,24,16,.06);}
+        .topbar h1{font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--brown-dark);}
+        .btn-shop{padding:9px 22px;background:var(--brown-warm);color:var(--cream);border-radius:10px;
+            text-decoration:none;font-size:.875rem;font-weight:500;transition:all .2s;}
+        .btn-shop:hover{background:var(--brown-mid);transform:translateY(-1px);}
+        .content{padding:32px 36px;}
+
+        /* Status tabs */
+        .status-tabs{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;}
+        .tab{padding:7px 18px;border-radius:100px;font-size:.8rem;font-weight:500;cursor:pointer;
+            border:1.5px solid #E8D8C4;background:var(--white);color:var(--text-muted);transition:all .2s;}
+        .tab.active,.tab:hover{background:var(--brown-warm);color:var(--cream);border-color:var(--brown-warm);}
+
+        /* Order cards */
+        .orders-list{display:flex;flex-direction:column;gap:16px;}
+        .order-card{background:var(--white);border-radius:18px;border:1px solid var(--cream-dark);
+            overflow:hidden;transition:all .2s;animation:fadeSlideUp .4s ease both;}
+        .order-card:hover{box-shadow:0 8px 28px rgba(44,24,16,.1);border-color:var(--caramel);}
+        .order-card-header{padding:16px 22px;display:flex;align-items:center;justify-content:space-between;
+            border-bottom:1px solid var(--cream-dark);}
+        .order-id{font-family:'Playfair Display',serif;font-size:1rem;color:var(--brown-dark);}
+        .order-date{font-size:.78rem;color:var(--text-muted);margin-top:2px;}
+        .status-chip{padding:5px 14px;border-radius:100px;font-size:.75rem;font-weight:600;}
+        .status-orange{background:rgba(230,126,34,.12);color:#E67E22;}
+        .status-blue  {background:rgba(41,128,185,.12);color:#2980B9;}
+        .status-purple{background:rgba(142,68,173,.12);color:#8E44AD;}
+        .status-teal  {background:rgba(26,188,156,.12);color:#16A085;}
+        .status-green {background:rgba(39,174,96,.12);color:var(--success);}
+        .status-red   {background:rgba(192,57,43,.12);color:var(--error);}
+        .status-grey  {background:rgba(0,0,0,.07);color:#666;}
+
+        .order-card-body{padding:16px 22px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+        .order-items-preview{display:flex;gap:8px;flex-wrap:wrap;}
+        .item-preview{display:flex;align-items:center;gap:6px;font-size:.82rem;color:var(--text-muted);}
+        .item-preview .dot{width:6px;height:6px;border-radius:50%;background:var(--caramel);}
+        .order-total{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--brown-dark);}
+        .order-total small{font-size:.75rem;color:var(--text-muted);font-weight:300;}
+
+        .order-actions{display:flex;gap:8px;align-items:center;}
+        .btn-detail{padding:7px 18px;background:var(--cream-dark);color:var(--brown-warm);
+            border-radius:9px;text-decoration:none;font-size:.8rem;font-weight:500;transition:all .2s;}
+        .btn-detail:hover{background:var(--caramel);color:var(--white);}
+
+        .empty-state{text-align:center;padding:64px 20px;background:var(--white);border-radius:18px;border:1px solid var(--cream-dark);}
+        .empty-state .icon{font-size:56px;margin-bottom:12px;}
+        .empty-state h3{font-family:'Playfair Display',serif;color:var(--brown-dark);margin-bottom:6px;}
+        .empty-state p{color:var(--text-muted);font-size:.875rem;margin-bottom:20px;}
+
+        @keyframes fadeSlideUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+        @media(max-width:900px){.sidebar{display:none;}.main{margin-left:0;}}
+        @media(max-width:580px){.content{padding:20px;}}
+    </style>
+</head>
+<body>
+<aside class="sidebar">
+    <div class="sidebar-brand">
+        <span class="logo">🍫</span>
+        <h2>Sugar Corner</h2>
+        <small>Customer Portal</small>
+    </div>
+    <nav>
+        <div class="nav-section">Main Menu</div>
+        <a class="nav-item" href="/customer/dashboard"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a class="nav-item" href="/customer/profile"><span class="nav-icon">👤</span> My Profile</a>
+        <div class="nav-section">Shop</div>
+        <a class="nav-item" href="/products"><span class="nav-icon">🍫</span> Browse Brownies</a>
+        <a class="nav-item active" href="/orders"><span class="nav-icon">📦</span> My Orders</a>
+        <div class="nav-section">Support</div>
+        <a class="nav-item" href="#"><span class="nav-icon">💬</span> Contact Us</a>
+    </nav>
+    <div class="sidebar-footer">
+        <a class="logout-btn" href="/logout"><span>🚪</span> Sign Out</a>
+    </div>
+</aside>
+
+<div class="main">
+    <div class="topbar">
+        <h1>My Orders</h1>
+        <a href="/products" class="btn-shop">🛒 Order More</a>
+    </div>
+    <div class="content">
+
+        <!-- Filter tabs -->
+        <div class="status-tabs">
+            <div class="tab active" onclick="filterOrders('ALL')">All</div>
+            <div class="tab" onclick="filterOrders('PENDING')">⏳ Pending</div>
+            <div class="tab" onclick="filterOrders('CONFIRMED')">✅ Confirmed</div>
+            <div class="tab" onclick="filterOrders('IN_PREPARATION')">👩‍🍳 Preparing</div>
+            <div class="tab" onclick="filterOrders('READY')">📦 Ready</div>
+            <div class="tab" onclick="filterOrders('DELIVERED')">🚚 Delivered</div>
+            <div class="tab" onclick="filterOrders('CANCELLED')">❌ Cancelled</div>
+        </div>
+
+        <!-- Empty state -->
+        <div>
+            <div class="icon">📦</div>
+            <h3>No orders yet</h3>
+            <p>You haven't placed any orders. Let's fix that!</p>
+            <a href="/products" class="btn-shop">Browse Brownies →</a>
+        </div>
+
+        <!-- Orders list -->
+        <div class="orders-list" id="ordersList">
+            <div th:each="order,i : ${orders}"
+                 class="order-card"
+                 th:attr="data-status=${order.status}"
+                 th:style="'animation-delay:' + ${i.index * 0.05} + 's'">
+
+                <div class="order-card-header">
+                    <div>
+                        <div class="order-id" th:text="'Order #' + ${order.id}">Order #1</div>
+                        <div class="order-date"
+                             th:text="${#temporals.format(order.createdAt,'dd MMM yyyy, hh:mm a')}">01 Jan 2025</div>
+                    </div>
+                    <span class="status-chip"
+                          th:classappend="'status-' + ${order.statusColor}"
+                          th:text="${order.statusLabel}">Pending</span>
+                </div>
+
+                <div class="order-card-body">
+                    <div>
+                        <div class="order-items-preview">
+                            <div th:each="item : ${order.items}" class="item-preview">
+                                <div class="dot"></div>
+                                <span th:text="${item.quantity + 'x ' + item.productName}">1x Brownie</span>
+                            </div>
+                        </div>
+                        <div style="margin-top:8px;font-size:.8rem;color:var(--text-muted);"
+                             th:text="${order.deliveryType == 'PICKUP'} ? '🏪 Pickup' : '🚚 Delivery to ' + ${order.deliveryCity}">
+                            Delivery
+                        </div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div class="order-total">
+                            Rs. <span th:text="${#numbers.formatDecimal(order.totalAmount,1,'COMMA',2,'POINT')}">0.00</span>
+                            <small>total</small>
+                        </div>
+                        <div class="order-actions" style="margin-top:10px;justify-content:flex-end;">
+                            <a th:href="'/orders/' + ${order.id}" class="btn-detail">View Details →</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function filterOrders(status) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        event.target.classList.add('active');
+        document.querySelectorAll('.order-card').forEach(card => {
+            card.style.display = (status === 'ALL' || card.dataset.status === status) ? '' : 'none';
+        });
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Products – Sugar Corner Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <style>
+        :root{
+            --dark:#111;--dark2:#1a1a1a;--dark3:#222;
+            --accent:#C68642;--accent2:#8B4513;--gold:#D4A843;
+            --cream:#FDF6EC;--muted:#888;--sidebar-w:260px;
+            --success:#51CF66;--error:#FF6B6B;--warn:#FFA94D;--border:rgba(255,255,255,.07);
+        }
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:'DM Sans',sans-serif;background:#0f0f0f;color:#e8e0d8;display:flex;min-height:100vh;}
+
+        /* ── Admin Sidebar ── */
+        .sidebar{width:var(--sidebar-w);background:var(--dark);position:fixed;top:0;left:0;height:100vh;
+            display:flex;flex-direction:column;padding:28px 0;border-right:1px solid var(--border);z-index:100;}
+        .sidebar-brand{text-align:center;padding:0 24px 28px;border-bottom:1px solid var(--border);}
+        .sidebar-brand .logo{font-size:36px;display:block;margin-bottom:8px;}
+        .sidebar-brand h2{font-family:'Playfair Display',serif;font-size:1.25rem;
+            background:linear-gradient(135deg,var(--cream),var(--accent));
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+        .sidebar-brand .role-badge{display:inline-block;margin-top:6px;padding:3px 12px;
+            background:rgba(196,134,66,.2);color:var(--accent);border:1px solid rgba(196,134,66,.3);
+            border-radius:100px;font-size:.7rem;letter-spacing:1px;text-transform:uppercase;}
+        nav{flex:1;padding:8px 16px;}
+        .nav-section{font-size:.65rem;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.25);padding:16px 12px 6px;}
+        .nav-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;margin-bottom:3px;
+            color:rgba(255,255,255,.55);font-size:.86rem;text-decoration:none;transition:all .2s;}
+        .nav-item:hover,.nav-item.active{background:rgba(196,134,66,.15);color:var(--cream);}
+        .nav-item.active{border-left:3px solid var(--accent);padding-left:11px;}
+        .nav-icon{font-size:16px;width:20px;text-align:center;}
+        .sidebar-footer{padding:16px;border-top:1px solid var(--border);}
+        .logout-btn{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;
+            color:rgba(255,255,255,.4);font-size:.84rem;text-decoration:none;transition:all .2s;}
+        .logout-btn:hover{background:rgba(255,107,107,.1);color:#FF8A80;}
+
+        .main{margin-left:var(--sidebar-w);flex:1;}
+        .topbar{background:var(--dark2);padding:18px 36px;border-bottom:1px solid var(--border);
+            display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+        .topbar-left{display:flex;align-items:center;gap:10px;}
+        .topbar-left a{color:var(--muted);font-size:.84rem;text-decoration:none;}
+        .topbar-left a:hover{color:var(--accent);}
+        .topbar-left .sep{color:var(--muted);}
+        .topbar h1{font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--cream);}
+        .btn-add{padding:9px 22px;background:linear-gradient(135deg,var(--accent2),var(--accent));
+            color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:.875rem;font-weight:500;
+            text-decoration:none;cursor:pointer;transition:all .2s;}
+        .btn-add:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(196,134,66,.3);}
+
+        .content{padding:28px 36px;}
+
+        /* Alerts */
+        .alert{padding:12px 18px;border-radius:10px;font-size:.875rem;margin-bottom:20px;display:flex;align-items:center;gap:8px;animation:fadeSlideUp .4s ease;}
+        .alert-success{background:rgba(81,207,102,.1);border:1px solid rgba(81,207,102,.25);color:var(--success);}
+
+        /* Toolbar */
+        .toolbar{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;animation:fadeSlideUp .4s ease both;}
+        .search-wrap{position:relative;flex:1;min-width:200px;}
+        .search-wrap .icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--muted);}
+        .search-wrap input{width:100%;padding:9px 12px 9px 34px;background:var(--dark2);border:1px solid var(--border);
+            border-radius:9px;color:var(--cream);font-family:inherit;font-size:.875rem;outline:none;transition:all .2s;}
+        .search-wrap input:focus{border-color:rgba(196,134,66,.4);}
+        .search-wrap input::placeholder{color:var(--muted);}
+        .filter-select{padding:9px 14px;background:var(--dark2);border:1px solid var(--border);
+            border-radius:9px;color:var(--cream);font-family:inherit;font-size:.875rem;outline:none;cursor:pointer;}
+        .count-badge{padding:7px 16px;background:rgba(196,134,66,.1);border:1px solid rgba(196,134,66,.2);
+            border-radius:9px;color:var(--accent);font-size:.82rem;white-space:nowrap;}
+
+        /* Table */
+        .table-wrap{background:var(--dark2);border-radius:16px;border:1px solid var(--border);overflow:hidden;animation:fadeSlideUp .5s ease both .1s;}
+        table{width:100%;border-collapse:collapse;}
+        thead th{padding:13px 16px;text-align:left;font-size:.7rem;font-weight:500;letter-spacing:1px;text-transform:uppercase;
+            color:var(--muted);background:rgba(255,255,255,.02);border-bottom:1px solid var(--border);}
+        tbody tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s;}
+        tbody tr:last-child{border-bottom:none;}
+        tbody tr:hover{background:rgba(196,134,66,.04);}
+        td{padding:13px 16px;font-size:.875rem;vertical-align:middle;}
+
+        .product-cell{display:flex;align-items:center;gap:12px;}
+        .prod-thumb{width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,#2a1810,#4a2818);
+            display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;overflow:hidden;}
+        .prod-thumb img{width:100%;height:100%;object-fit:cover;}
+        .prod-name{font-weight:500;color:var(--cream);font-size:.9rem;}
+        .prod-id{font-size:.72rem;color:var(--muted);}
+
+        .chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:100px;font-size:.72rem;font-weight:500;}
+        .chip-available  {background:rgba(81,207,102,.12);color:var(--success);}
+        .chip-unavailable{background:rgba(255,107,107,.12);color:var(--error);}
+        .chip-featured   {background:rgba(212,168,67,.15);color:var(--gold);}
+        .chip-in         {background:rgba(81,207,102,.1);color:var(--success);}
+        .chip-low        {background:rgba(255,169,77,.1);color:var(--warn);}
+        .chip-out        {background:rgba(255,107,107,.1);color:var(--error);}
+
+        .action-btns{display:flex;gap:6px;flex-wrap:wrap;}
+        .btn-sm{padding:5px 12px;border-radius:7px;font-family:inherit;font-size:.76rem;font-weight:500;cursor:pointer;border:none;transition:all .18s;text-decoration:none;display:inline-flex;align-items:center;gap:4px;}
+        .btn-edit   {background:rgba(196,134,66,.15);color:var(--accent);}
+        .btn-edit:hover   {background:rgba(196,134,66,.28);}
+        .btn-remove {background:rgba(255,169,77,.12);color:var(--warn);}
+        .btn-remove:hover {background:rgba(255,169,77,.25);}
+        .btn-delete {background:rgba(255,107,107,.12);color:var(--error);}
+        .btn-delete:hover {background:rgba(255,107,107,.25);}
+
+        .empty-state{text-align:center;padding:56px 20px;}
+        .empty-state .icon{font-size:46px;margin-bottom:10px;}
+        .empty-state p{color:var(--muted);font-size:.9rem;}
+
+        @keyframes fadeSlideUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+        @media(max-width:900px){.sidebar{display:none;}.main{margin-left:0;}}
+        @media(max-width:640px){.content{padding:16px;} td,th{padding:10px 10px;}}
+    </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+    <div class="sidebar-brand">
+        <span class="logo">🍫</span>
+        <h2>Sugar Corner</h2>
+        <span class="role-badge">Admin Panel</span>
+    </div>
+    <nav>
+        <div class="nav-section">Overview</div>
+        <a class="nav-item" href="/admin/dashboard"><span class="nav-icon">📊</span> Dashboard</a>
+        <div class="nav-section">Customer Mgmt</div>
+        <a class="nav-item" href="/admin/customers"><span class="nav-icon">👥</span> All Customers</a>
+        <div class="nav-section">Product Mgmt</div>
+        <a class="nav-item active" href="/admin/products"><span class="nav-icon">🍫</span> All Products</a>
+        <a class="nav-item" href="/admin/products/add"><span class="nav-icon">➕</span> Add Product</a>
+        <div class="nav-section">Coming Soon</div>
+        <a class="nav-item" href="#"><span class="nav-icon">📦</span> Orders</a>
+        <a class="nav-item" href="#"><span class="nav-icon">💳</span> Payments</a>
+        <a class="nav-item" href="#"><span class="nav-icon">💬</span> Inquiries</a>
+    </nav>
+    <div class="sidebar-footer">
+        <a class="logout-btn" href="/logout"><span>🚪</span> Sign Out</a>
+    </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+    <div class="topbar">
+        <div class="topbar-left">
+            <a href="/admin/dashboard">Dashboard</a>
+            <span class="sep">›</span>
+            <h1>Products</h1>
+        </div>
+        <a class="btn-add" href="/admin/products/add">➕ Add Product</a>
+    </div>
+
+    <div class="content">
+
+        <!-- Success alert -->
+        <div class="alert alert-success" th:if="${param.success != null}">
+            ✅
+            <span th:if="${param.success[0] == 'added'}">Product added successfully!</span>
+            <span th:if="${param.success[0] == 'updated'}">Product updated successfully!</span>
+            <span th:if="${param.success[0] == 'removed'}">Product marked as unavailable.</span>
+            <span th:if="${param.success[0] == 'deleted'}">Product permanently deleted.</span>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="search-wrap">
+                <span class="icon">🔍</span>
+                <input type="text" id="searchInput" placeholder="Search products…" oninput="filterTable()"/>
+            </div>
+            <select class="filter-select" id="availFilter" onchange="filterTable()">
+                <option value="">All Status</option>
+                <option value="available">Available</option>
+                <option value="unavailable">Unavailable</option>
+            </select>
+            <div class="count-badge">
+                🍫 Total: <strong th:text="${products.size()}">0</strong>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-wrap">
+            <table id="productTable">
+                <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Status</th>
+                    <th>Featured</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${products == null or #lists.isEmpty(products)}">
+                    <td colspan="7">
+                        <div class="empty-state" style="text-align: center; padding: 2rem;">
+                            <div class="icon" style="font-size: 2rem; margin-bottom: 0.5rem;">🍫</div>
+                            <p>
+                                No products yet.
+                                <a th:href="@{/admin/products/add}" style="color:var(--accent); font-weight: bold;">
+                                    Add your first brownie!
+                                </a>
+                            </p>
+                        </div>
+                    </td>
+                </tr>
+
+                <tr th:each="p : ${products}"
+                    th:data-name="${p.name}"
+                    th:data-avail="${p.available ? 'available' : 'unavailable'}">
+                    <td>
+                        <div class="product-cell">
+                            <div class="prod-thumb">
+                                <img th:if="${p.imagePath}" th:src="'/' + ${p.imagePath}" th:alt="${p.name}"/>
+                                <span th:unless="${p.imagePath}">🍫</span>
+                            </div>
+                            <div>
+                                <div class="prod-name" th:text="${p.name}">Brownie</div>
+                                <div class="prod-id" th:text="'#' + ${p.id}">#1</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td th:text="${p.category}">Classic</td>
+                    <td th:text="'Rs. ' + ${#numbers.formatDecimal(p.price,1,'COMMA',2,'POINT')}">Rs. 350.00</td>
+                    <td>
+                        <span th:if="${p.stockLabel == 'In Stock'}"   class="chip chip-in">● In Stock</span>
+                        <span th:if="${p.stockLabel == 'Low Stock'}"  class="chip chip-low">● Low</span>
+                        <span th:if="${p.stockLabel == 'Out of Stock'}" class="chip chip-out">● Out</span>
+                        <span style="font-size:.78rem;color:var(--muted);margin-left:4px;"
+                              th:text="'(' + ${p.stockQuantity} + ')'"></span>
+                    </td>
+                    <td>
+                        <span th:if="${p.available}"  class="chip chip-available">✓ Available</span>
+                        <span th:unless="${p.available}" class="chip chip-unavailable">✗ Hidden</span>
+                    </td>
+                    <td>
+                        <span th:if="${p.featured}" class="chip chip-featured">⭐ Yes</span>
+                        <span th:unless="${p.featured}" style="color:var(--muted);font-size:.8rem;">–</span>
+                    </td>
+                    <td>
+                        <div class="action-btns">
+                            <a th:href="'/admin/products/edit/' + ${p.id}" class="btn-sm btn-edit">✏️ Edit</a>
+                            <form th:if="${p.available}"
+                                  method="POST" th:action="'/admin/products/remove/' + ${p.id}"
+                                  onsubmit="return confirm('Hide this product from customers?')">
+                                <button type="submit" class="btn-sm btn-remove">🙈 Hide</button>
+                            </form>
+                            <form th:unless="${p.available}"
+                                  method="POST" th:action="'/admin/products/edit/' + ${p.id}"
+                                  style="display:none;"></form>
+                            <form method="POST" th:action="'/admin/products/delete/' + ${p.id}"
+                                  onsubmit="return confirm('Permanently DELETE this product? This cannot be undone.')">
+                                <button type="submit" class="btn-sm btn-delete">🗑️ Delete</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function filterTable() {
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const avail  = document.getElementById('availFilter').value;
+        document.querySelectorAll('#productTable tbody tr[data-name]').forEach(row => {
+            const nameMatch  = !search || (row.dataset.name || '').toLowerCase().includes(search);
+            const availMatch = !avail  || row.dataset.avail === avail;
+            row.style.display = (nameMatch && availMatch) ? '' : 'none';
+        });
+    }
+</script>
+</body>
+</html>

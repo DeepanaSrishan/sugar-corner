@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Sugar Corner – Artisan Brownie Shop</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+    <style>
+        :root{--brown-dark:#2C1810;--brown-mid:#5C3317;--brown-warm:#8B4513;--caramel:#C68642;--cream:#FDF6EC;--white:#FFFEF9;}
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:'DM Sans',sans-serif;background:var(--cream);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 20px;}
+        .hero{max-width:600px;animation:fadeUp .8s ease both;}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
+        .logo{font-size:80px;display:block;margin-bottom:20px;animation:bounceIn 1s ease both .3s;}
+        @keyframes bounceIn{0%{transform:scale(0);opacity:0;}60%{transform:scale(1.1);}100%{transform:scale(1);opacity:1;}}
+        h1{font-family:'Playfair Display',serif;font-size:3rem;color:var(--brown-dark);line-height:1.1;margin-bottom:10px;}
+        h1 em{font-style:italic;color:var(--caramel);}
+        p{color:var(--brown-mid);font-size:1.05rem;font-weight:300;margin-bottom:40px;line-height:1.6;}
+        .btn-row{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;}
+        .btn{padding:14px 36px;border-radius:12px;font-family:inherit;font-size:.95rem;font-weight:500;text-decoration:none;transition:all .25s;cursor:pointer;border:none;}
+        .btn-primary{background:linear-gradient(135deg,var(--brown-warm),var(--brown-mid));color:var(--cream);}
+        .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(92,51,23,.35);}
+        .btn-outline{background:transparent;border:2px solid var(--caramel);color:var(--brown-warm);}
+        .btn-outline:hover{background:var(--caramel);color:var(--white);}
+        .tagline{margin-top:40px;font-size:.8rem;letter-spacing:2px;text-transform:uppercase;color:var(--caramel);}
+    </style>
+</head>
+<body>
+<div class="hero">
+    <span class="logo">🍫</span>
+    <h1>Welcome to <em>Sugar Corner</em></h1>
+    <p>Handcrafted brownies baked with love. Order online, pick up fresh, or get them delivered right to your door.</p>
+    <div class="btn-row">
+        <a href="/login"    class="btn btn-primary">Customer Login</a>
+        <a href="/register" class="btn btn-outline">Create Account</a>
+    </div>
+    <div class="tagline">✦ Admin access: <a href="/admin/login" style="color:inherit;">Admin Login</a> ✦</div>
+</div>
+</body>
+</html>

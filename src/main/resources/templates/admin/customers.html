@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Customers – Sugar Corner Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <style>
+        :root {
+            --dark:#111; --dark2:#1a1a1a; --dark3:#222;
+            --accent:#C68642; --accent2:#8B4513; --gold:#D4A843;
+            --cream:#FDF6EC; --muted:#888; --sidebar-w:260px;
+            --success:#51CF66; --error:#FF6B6B; --border:rgba(255,255,255,.07);
+        }
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:'DM Sans',sans-serif;background:#0f0f0f;color:#e8e0d8;display:flex;min-height:100vh;}
+
+        /* ── Sidebar (same dark admin style) ── */
+        .sidebar{width:var(--sidebar-w);background:var(--dark);position:fixed;top:0;left:0;height:100vh;
+            display:flex;flex-direction:column;padding:28px 0;border-right:1px solid var(--border);z-index:100;}
+        .sidebar-brand{text-align:center;padding:0 24px 28px;border-bottom:1px solid var(--border);}
+        .sidebar-brand .logo{font-size:36px;display:block;margin-bottom:8px;}
+        .sidebar-brand h2{font-family:'Playfair Display',serif;font-size:1.25rem;
+            background:linear-gradient(135deg,var(--cream),var(--accent));
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+        .sidebar-brand .role-badge{display:inline-block;margin-top:6px;padding:3px 12px;
+            background:rgba(196,134,66,.2);color:var(--accent);border:1px solid rgba(196,134,66,.3);
+            border-radius:100px;font-size:.7rem;letter-spacing:1px;text-transform:uppercase;}
+        nav{flex:1;padding:8px 16px;}
+        .nav-section{font-size:.65rem;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.25);padding:16px 12px 6px;}
+        .nav-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;margin-bottom:3px;
+            color:rgba(255,255,255,.55);font-size:.86rem;text-decoration:none;transition:all .2s;}
+        .nav-item:hover,.nav-item.active{background:rgba(196,134,66,.15);color:var(--cream);}
+        .nav-item.active{border-left:3px solid var(--accent);padding-left:11px;}
+        .nav-icon{font-size:16px;width:20px;text-align:center;}
+        .sidebar-footer{padding:16px;border-top:1px solid var(--border);}
+        .logout-btn{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;
+            color:rgba(255,255,255,.4);font-size:.84rem;text-decoration:none;transition:all .2s;}
+        .logout-btn:hover{background:rgba(255,107,107,.1);color:#FF8A80;}
+
+        /* ── Main ── */
+        .main{margin-left:var(--sidebar-w);flex:1;}
+        .topbar{background:var(--dark2);padding:18px 36px;border-bottom:1px solid var(--border);
+            display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+        .topbar-left{display:flex;align-items:center;gap:10px;}
+        .topbar-left a{color:var(--muted);font-size:.84rem;text-decoration:none;}
+        .topbar-left a:hover{color:var(--accent);}
+        .topbar-left .sep{color:var(--muted);}
+        .topbar h1{font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--cream);}
+        .content{padding:32px 36px;}
+
+        /* ── Search & Filter Bar ── */
+        .toolbar{display:flex;align-items:center;gap:14px;margin-bottom:24px;flex-wrap:wrap;
+            animation:fadeSlideUp .4s ease both;}
+        .search-wrap{position:relative;flex:1;min-width:200px;}
+        .search-wrap .icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--muted);}
+        .search-wrap input{width:100%;padding:10px 12px 10px 36px;
+            background:var(--dark2);border:1px solid var(--border);border-radius:10px;
+            color:var(--cream);font-family:inherit;font-size:.875rem;outline:none;transition:all .2s;}
+        .search-wrap input:focus{border-color:rgba(196,134,66,.4);box-shadow:0 0 0 3px rgba(196,134,66,.08);}
+        .search-wrap input::placeholder{color:var(--muted);}
+        .filter-select{padding:10px 14px;background:var(--dark2);border:1px solid var(--border);
+            border-radius:10px;color:var(--cream);font-family:inherit;font-size:.875rem;outline:none;cursor:pointer;}
+        .filter-select:focus{border-color:rgba(196,134,66,.4);}
+        .count-badge{padding:8px 16px;background:rgba(196,134,66,.12);border:1px solid rgba(196,134,66,.2);
+            border-radius:10px;color:var(--accent);font-size:.82rem;white-space:nowrap;}
+
+        /* ── Table ── */
+        .table-wrap{background:var(--dark2);border-radius:16px;border:1px solid var(--border);overflow:hidden;
+            animation:fadeSlideUp .5s ease both .1s;}
+        table{width:100%;border-collapse:collapse;}
+        thead th{padding:14px 18px;text-align:left;font-size:.72rem;font-weight:500;
+            letter-spacing:1px;text-transform:uppercase;color:var(--muted);
+            background:rgba(255,255,255,.02);border-bottom:1px solid var(--border);}
+        tbody tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s;}
+        tbody tr:last-child{border-bottom:none;}
+        tbody tr:hover{background:rgba(196,134,66,.05);}
+        td{padding:14px 18px;font-size:.875rem;vertical-align:middle;}
+
+        .customer-cell{display:flex;align-items:center;gap:12px;}
+        .avatar{width:36px;height:36px;border-radius:50%;
+            background:linear-gradient(135deg,var(--accent2),var(--accent));
+            display:flex;align-items:center;justify-content:center;
+            font-size:14px;font-weight:600;color:#fff;flex-shrink:0;overflow:hidden;}
+        .avatar img{width:100%;height:100%;object-fit:cover;}
+        .cust-name{font-weight:500;color:var(--cream);}
+        .cust-id{font-size:.72rem;color:var(--muted);}
+
+        .chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:100px;font-size:.72rem;font-weight:500;}
+        .chip-active  {background:rgba(81,207,102,.12);color:var(--success);}
+        .chip-blocked {background:rgba(255,107,107,.12);color:var(--error);}
+
+        .action-btns{display:flex;gap:8px;}
+        .btn-sm{padding:6px 14px;border-radius:8px;font-family:inherit;font-size:.78rem;font-weight:500;
+            cursor:pointer;border:none;transition:all .18s;}
+        .btn-block  {background:rgba(255,107,107,.12);color:var(--error);}
+        .btn-block:hover  {background:rgba(255,107,107,.25);}
+        .btn-unblock{background:rgba(81,207,102,.12);color:var(--success);}
+        .btn-unblock:hover{background:rgba(81,207,102,.25);}
+
+        /* Empty state */
+        .empty-state{text-align:center;padding:60px 20px;}
+        .empty-state .icon{font-size:48px;margin-bottom:12px;}
+        .empty-state p{color:var(--muted);font-size:.9rem;}
+
+        @keyframes fadeSlideUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+        @media(max-width:900px){.sidebar{display:none;}.main{margin-left:0;}}
+        @media(max-width:640px){.content{padding:20px;} table{font-size:.8rem;} td,th{padding:10px 12px;}}
+    </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+    <div class="sidebar-brand">
+        <span class="logo">🍫</span>
+        <h2>Sugar Corner</h2>
+        <span class="role-badge">Admin Panel</span>
+    </div>
+    <nav>
+        <div class="nav-section">Overview</div>
+        <a class="nav-item" href="/admin/dashboard"><span class="nav-icon">📊</span> Dashboard</a>
+        <div class="nav-section">Customer Mgmt</div>
+        <a class="nav-item active" href="/admin/customers"><span class="nav-icon">👥</span> All Customers</a>
+        <div class="nav-section">Coming Soon</div>
+        <a class="nav-item" href="#"><span class="nav-icon">🍫</span> Products</a>
+        <a class="nav-item" href="#"><span class="nav-icon">📦</span> Orders</a>
+        <a class="nav-item" href="#"><span class="nav-icon">💳</span> Payments</a>
+        <a class="nav-item" href="#"><span class="nav-icon">💬</span> Inquiries</a>
+    </nav>
+    <div class="sidebar-footer">
+        <a class="logout-btn" href="/logout"><span>🚪</span> Sign Out</a>
+    </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+    <div class="topbar">
+        <div class="topbar-left">
+            <a href="/admin/dashboard">Dashboard</a>
+            <span class="sep">›</span>
+            <h1>Customers</h1>
+        </div>
+    </div>
+
+    <div class="content">
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="search-wrap">
+                <span class="icon">🔍</span>
+                <input type="text" id="searchInput" placeholder="Search by name or email…" oninput="filterTable()"/>
+            </div>
+            <select class="filter-select" id="statusFilter" onchange="filterTable()">
+                <option value="">All Statuses</option>
+                <option value="ACTIVE">Active</option>
+                <option value="BLOCKED">Blocked</option>
+            </select>
+            <div class="count-badge">
+                👥 Total: <strong th:text="${customers.size()}">0</strong>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-wrap">
+            <table id="customerTable">
+                <thead>
+                <tr>
+                    <th>Customer</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>City</th>
+                    <th>Status</th>
+                    <th>Joined</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <!-- Empty state -->
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <div class="icon">👥</div>
+                            <p>No customers registered yet.</p>
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- Customer rows -->
+                <tr th:each="c : ${customers}"
+                    th:data-name="${c.firstName + ' ' + c.lastName}"
+                    th:data-email="${c.email}"
+                    th:data-status="${c.status}">
+                    <td>
+                        <div class="customer-cell">
+                            <div class="avatar">
+                                <img th:if="${c.profilePhotoPath}" th:src="'/' + ${c.profilePhotoPath}" alt="photo"/>
+                                <span th:unless="${c.profilePhotoPath}" th:text="${c.firstName?.substring(0,1)?.toUpperCase()}">K</span>
+                            </div>
+                            <div>
+                                <div class="cust-name" th:text="${c.firstName + ' ' + c.lastName}">Kasun Perera</div>
+                                <div class="cust-id" th:text="'#' + ${c.id}">  #1</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td th:text="${c.email}">kasun@example.com</td>
+                    <td th:text="${c.phone ?: '–'}">0771234567</td>
+                    <td th:text="${c.city ?: '–'}">Colombo</td>
+                    <td>
+                        <span th:if="${c.status == 'ACTIVE'}"  class="chip chip-active">● Active</span>
+                        <span th:if="${c.status == 'BLOCKED'}" class="chip chip-blocked">● Blocked</span>
+                    </td>
+                    <td th:text="${#temporals.format(c.createdAt, 'dd MMM yyyy')}">01 Jan 2025</td>
+                    <td>
+                        <div class="action-btns">
+                            <form th:if="${c.status == 'ACTIVE'}"
+                                  method="POST" th:action="'/admin/customers/' + ${c.id} + '/block'"
+                                  onsubmit="return confirm('Block this customer?')">
+                                <button type="submit" class="btn-sm btn-block">🚫 Block</button>
+                            </form>
+                            <form th:if="${c.status == 'BLOCKED'}"
+                                  method="POST" th:action="'/admin/customers/' + ${c.id} + '/unblock'">
+                                <button type="submit" class="btn-sm btn-unblock">✅ Unblock</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function filterTable() {
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const status = document.getElementById('statusFilter').value.toUpperCase();
+        document.querySelectorAll('#customerTable tbody tr[data-name]').forEach(row => {
+            const name  = (row.dataset.name  || '').toLowerCase();
+            const email = (row.dataset.email || '').toLowerCase();
+            const st    = (row.dataset.status || '').toUpperCase();
+            const matchSearch = !search || name.includes(search) || email.includes(search);
+            const matchStatus = !status || st === status;
+            row.style.display = (matchSearch && matchStatus) ? '' : 'none';
+        });
+    }
+</script>
+</body>
+</html>

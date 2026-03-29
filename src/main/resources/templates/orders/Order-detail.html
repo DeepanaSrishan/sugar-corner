@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="'Order #' + ${order.id} + ' – Sugar Corner'">Order Detail</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <style>
+        :root{--brown-dark:#2C1810;--brown-mid:#5C3317;--brown-warm:#8B4513;--caramel:#C68642;
+            --cream:#FDF6EC;--cream-dark:#F5E6D0;--white:#FFFEF9;--text-dark:#1A0F08;
+            --text-muted:#7A5C45;--success:#27AE60;--error:#C0392B;--sidebar-w:260px;}
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text-dark);display:flex;min-height:100vh;}
+        .sidebar{width:var(--sidebar-w);background:linear-gradient(175deg,var(--brown-dark),var(--brown-mid));
+            position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;padding:32px 0;z-index:100;}
+        .sidebar-brand{text-align:center;padding:0 24px 32px;border-bottom:1px solid rgba(255,255,255,.1);}
+        .sidebar-brand .logo{font-size:38px;display:block;margin-bottom:8px;}
+        .sidebar-brand h2{font-family:'Playfair Display',serif;color:var(--cream);font-size:1.3rem;}
+        .sidebar-brand small{color:var(--caramel);font-size:.75rem;letter-spacing:1px;text-transform:uppercase;}
+        nav{flex:1;padding:8px 16px;}
+        .nav-section{font-size:.68rem;letter-spacing:1.5px;text-transform:uppercase;color:rgba(253,246,236,.4);padding:14px 12px 5px;}
+        .nav-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;margin-bottom:3px;
+            color:rgba(253,246,236,.8);font-size:.87rem;text-decoration:none;transition:all .2s;}
+        .nav-item:hover,.nav-item.active{background:rgba(196,134,66,.25);color:var(--cream);}
+        .nav-icon{font-size:16px;width:20px;text-align:center;}
+        .sidebar-footer{padding:0 16px 16px;}
+        .logout-btn{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;
+            color:rgba(253,246,236,.6);font-size:.85rem;text-decoration:none;border:1px solid rgba(255,255,255,.1);transition:all .2s;}
+        .logout-btn:hover{background:rgba(192,57,43,.25);color:#FF8A80;}
+        .main{margin-left:var(--sidebar-w);flex:1;}
+        .topbar{background:var(--white);padding:18px 36px;border-bottom:1px solid var(--cream-dark);
+            display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:50;box-shadow:0 2px 12px rgba(44,24,16,.06);}
+        .topbar a{color:var(--text-muted);font-size:.84rem;text-decoration:none;}
+        .topbar a:hover{color:var(--brown-warm);}
+        .topbar .sep{color:var(--text-muted);}
+        .topbar h1{font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--brown-dark);}
+        .content{padding:32px 36px;max-width:860px;}
+
+        /* Alert */
+        .alert{padding:13px 18px;border-radius:12px;font-size:.875rem;margin-bottom:20px;
+            display:flex;align-items:center;gap:8px;}
+        .alert-success{background:#EFD;border-left:4px solid var(--success);color:var(--success);}
+        .alert-info   {background:#EEF;border-left:4px solid #3498DB;color:#2980B9;}
+
+        /* Status tracker */
+        .status-tracker{background:var(--white);border-radius:18px;border:1px solid var(--cream-dark);
+            padding:24px 28px;margin-bottom:20px;animation:fadeSlideUp .4s ease both;}
+        .tracker-title{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--brown-dark);margin-bottom:20px;}
+        .tracker-steps{display:flex;align-items:center;gap:0;}
+        .step{display:flex;flex-direction:column;align-items:center;flex:1;position:relative;}
+        .step::after{content:'';position:absolute;top:18px;left:50%;width:100%;height:2px;background:#E8D8C4;z-index:0;}
+        .step:last-child::after{display:none;}
+        .step-circle{width:36px;height:36px;border-radius:50%;border:2px solid #E8D8C4;
+            background:var(--cream);display:flex;align-items:center;justify-content:center;
+            font-size:14px;z-index:1;position:relative;transition:all .3s;}
+        .step.done .step-circle{background:var(--success);border-color:var(--success);color:white;}
+        .step.active .step-circle{background:var(--caramel);border-color:var(--caramel);color:white;
+            box-shadow:0 0 0 4px rgba(196,134,66,.2);}
+        .step.done::after{background:var(--success);}
+        .step-label{font-size:.7rem;color:var(--text-muted);margin-top:8px;text-align:center;font-weight:500;}
+        .step.active .step-label,.step.done .step-label{color:var(--brown-dark);}
+
+        /* Cards */
+        .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+        .detail-card{background:var(--white);border-radius:16px;border:1px solid var(--cream-dark);
+            padding:20px 22px;animation:fadeSlideUp .4s ease both;}
+        .detail-card h4{font-family:'Playfair Display',serif;font-size:.95rem;color:var(--brown-dark);
+            margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--cream-dark);}
+        .detail-row{display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:6px;}
+        .detail-label{color:var(--text-muted);}
+        .detail-val{color:var(--brown-dark);font-weight:500;text-align:right;}
+
+        /* Items table */
+        .items-card{background:var(--white);border-radius:16px;border:1px solid var(--cream-dark);
+            overflow:hidden;margin-bottom:16px;animation:fadeSlideUp .4s ease both .1s;}
+        .items-card h4{padding:16px 22px;font-family:'Playfair Display',serif;font-size:.95rem;
+            color:var(--brown-dark);border-bottom:1px solid var(--cream-dark);}
+        .item-row{display:flex;align-items:center;gap:14px;padding:14px 22px;
+            border-bottom:1px solid rgba(0,0,0,.04);}
+        .item-row:last-child{border-bottom:none;}
+        .item-thumb{width:48px;height:48px;border-radius:10px;
+            background:linear-gradient(135deg,var(--cream-dark),#e8d0b0);
+            display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;overflow:hidden;}
+        .item-thumb img{width:100%;height:100%;object-fit:cover;}
+        .item-name{font-weight:500;color:var(--brown-dark);font-size:.9rem;}
+        .item-custom{font-size:.75rem;color:var(--caramel);margin-top:2px;}
+        .item-qty{color:var(--text-muted);font-size:.82rem;}
+        .item-price{margin-left:auto;font-weight:600;color:var(--brown-dark);white-space:nowrap;}
+
+        /* Total row */
+        .total-row{padding:14px 22px;display:flex;justify-content:space-between;align-items:center;
+            background:var(--cream-dark);}
+        .total-label{font-family:'Playfair Display',serif;font-size:1rem;color:var(--brown-dark);}
+        .total-val{font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--brown-warm);}
+
+        /* Actions */
+        .action-bar{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;animation:fadeSlideUp .4s ease both .2s;}
+        .btn-primary{padding:11px 26px;background:linear-gradient(135deg,var(--brown-warm),var(--brown-mid));
+            color:var(--cream);border:none;border-radius:11px;font-family:inherit;font-size:.875rem;
+            font-weight:500;cursor:pointer;text-decoration:none;transition:all .2s;}
+        .btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(92,51,23,.3);}
+        .btn-danger{padding:11px 24px;background:rgba(192,57,43,.1);color:var(--error);
+            border:1.5px solid rgba(192,57,43,.2);border-radius:11px;font-family:inherit;font-size:.875rem;
+            font-weight:500;cursor:pointer;transition:all .2s;}
+        .btn-danger:hover{background:rgba(192,57,43,.2);}
+        .btn-outline{padding:11px 24px;background:transparent;color:var(--text-muted);
+            border:1.5px solid #E8D8C4;border-radius:11px;font-family:inherit;font-size:.875rem;
+            text-decoration:none;display:flex;align-items:center;transition:all .2s;}
+        .btn-outline:hover{border-color:var(--caramel);color:var(--brown-warm);}
+
+        @keyframes fadeSlideUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+        @media(max-width:900px){.sidebar{display:none;}.main{margin-left:0;}}
+        @media(max-width:640px){.detail-grid{grid-template-columns:1fr;}.content{padding:20px;}}
+    </style>
+</head>
+<body>
+<aside class="sidebar">
+    <div class="sidebar-brand">
+        <span class="logo">🍫</span>
+        <h2>Sugar Corner</h2>
+        <small>Customer Portal</small>
+    </div>
+    <nav>
+        <div class="nav-section">Main Menu</div>
+        <a class="nav-item" href="/customer/dashboard"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a class="nav-item" href="/customer/profile"><span class="nav-icon">👤</span> My Profile</a>
+        <div class="nav-section">Shop</div>
+        <a class="nav-item" href="/products"><span class="nav-icon">🍫</span> Browse Brownies</a>
+        <a class="nav-item active" href="/orders"><span class="nav-icon">📦</span> My Orders</a>
+        <div class="nav-section">Support</div>
+        <a class="nav-item" href="#"><span class="nav-icon">💬</span> Contact Us</a>
+    </nav>
+    <div class="sidebar-footer">
+        <a class="logout-btn" href="/logout"><span>🚪</span> Sign Out</a>
+    </div>
+</aside>
+
+<div class="main">
+    <div class="topbar">
+        <a href="/orders">My Orders</a>
+        <span class="sep">›</span>
+        <h1 th:text="'Order #' + ${order.id}">Order #1</h1>
+    </div>
+    <div class="content">
+
+        <div th:if="${param.success != null}" class="alert alert-success">
+            ✅
+            <span th:if="${param.success[0] == 'placed'}">Order placed successfully! We'll confirm it shortly.</span>
+            <span th:if="${param.success[0] == 'reordered'}">Reorder placed! We're on it.</span>
+        </div>
+        <div th:if="${param.cancelled != null}" class="alert alert-info">
+            ℹ️ Your order has been cancelled.
+        </div>
+
+        <!-- Status Tracker -->
+        <div class="status-tracker">
+            <div class="tracker-title">Order Status</div>
+            <div class="tracker-steps">
+
+                <div class="step"
+                     th:classappend="${order.status == 'PENDING' ? 'active' : (order.status != 'CANCELLED' ? 'done' : '')}">
+                    <div class="step-circle">⏳</div>
+                    <div class="step-label">Pending</div>
+                </div>
+
+                <div class="step"
+                >
+                    <div class="step-circle">✅</div>
+                    <div class="step-label">Confirmed</div>
+                </div>
+
+                <div class="step"
+                >
+                    <div class="step-circle">👩‍🍳</div>
+                    <div class="step-label">Preparing</div>
+                </div>
+
+                <div class="step"
+                     th:classappend="${order.status == 'READY' ? 'active' : (order.status == 'DELIVERED' ? 'done' : '')}">
+                    <div class="step-circle">📦</div>
+                    <div class="step-label">Ready</div>
+                </div>
+
+                <div class="step"
+                     th:classappend="${order.status == 'DELIVERED' ? 'done' : ''}">
+                    <div class="step-circle">🚚</div>
+                    <div class="step-label">Delivered</div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Action Bar -->
+        <div class="action-bar">
+            <form th:if="${order.cancellable}"
+                  method="POST" th:action="'/orders/' + ${order.id} + '/cancel'"
+                  onsubmit="return confirm('Cancel this order?')">
+                <button type="submit" class="btn-danger">❌ Cancel Order</button>
+            </form>
+            <form method="POST" th:action="'/orders/' + ${order.id} + '/reorder'">
+                <button type="submit" class="btn-primary">🔁 Reorder Same Items</button>
+            </form>
+            <a href="/orders" class="btn-outline">← Back to Orders</a>
+        </div>
+
+        <!-- Items -->
+        <div class="items-card">
+            <h4>🍫 Order Items</h4>
+            <div th:each="item : ${order.items}" class="item-row">
+                <div class="item-thumb">
+                    <img th:if="${item.productImage != null}" th:src="'/' + ${item.productImage}" th:alt="${item.productName}"/>
+                    <span th:unless="${item.productImage != null}">🍫</span>
+                </div>
+                <div>
+                    <div class="item-name" th:text="${item.productName}">Brownie</div>
+                    <div class="item-qty" th:text="'Qty: ' + ${item.quantity}">Qty: 1</div>
+                    <div class="item-custom" th:if="${item.customization != null and item.customization != ''}"
+                         th:text="'Note: ' + ${item.customization}">Note</div>
+                </div>
+                <div class="item-price"
+                     th:text="'Rs. ' + ${#numbers.formatDecimal(item.subtotal,1,'COMMA',2,'POINT')}">Rs. 0.00</div>
+            </div>
+            <div class="total-row">
+                <span class="total-label">Total Amount</span>
+                <span class="total-val"
+                      th:text="'Rs. ' + ${#numbers.formatDecimal(order.totalAmount,1,'COMMA',2,'POINT')}">Rs. 0.00</span>
+            </div>
+        </div>
+
+        <!-- Details grid -->
+        <div class="detail-grid">
+            <div class="detail-card">
+                <h4>📍 Delivery Info</h4>
+                <div class="detail-row">
+                    <span class="detail-label">Type</span>
+                    <span class="detail-val" th:text="${order.deliveryType == 'PICKUP'} ? '🏪 Pickup' : '🚚 Delivery'">Delivery</span>
+                </div>
+                <div class="detail-row" th:if="${order.deliveryAddress != null and order.deliveryAddress != ''}">
+                    <span class="detail-label">Address</span>
+                    <span class="detail-val" th:text="${order.deliveryAddress}">-</span>
+                </div>
+                <div class="detail-row" th:if="${order.deliveryCity != null and order.deliveryCity != ''}">
+                    <span class="detail-label">City</span>
+                    <span class="detail-val" th:text="${order.deliveryCity}">-</span>
+                </div>
+                <div class="detail-row" th:if="${order.deliveryPostalCode != null and order.deliveryPostalCode != ''}">
+                    <span class="detail-label">Postal Code</span>
+                    <span class="detail-val" th:text="${order.deliveryPostalCode}">-</span>
+                </div>
+            </div>
+            <div class="detail-card">
+                <h4>📋 Order Info</h4>
+                <div class="detail-row">
+                    <span class="detail-label">Order ID</span>
+                    <span class="detail-val" th:text="'#' + ${order.id}">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Placed On</span>
+                    <span class="detail-val" th:text="${#temporals.format(order.createdAt,'dd MMM yyyy')}">-</span>
+                </div>
+                <div class="detail-row" th:if="${order.customerNote != null and order.customerNote != ''}">
+                    <span class="detail-label">Your Note</span>
+                    <span class="detail-val" th:text="${order.customerNote}">-</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+</body>
+</html>

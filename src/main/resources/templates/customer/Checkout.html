@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Checkout – Sugar Corner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <style>
+        :root{--brown-dark:#2C1810;--brown-mid:#5C3317;--brown-warm:#8B4513;--caramel:#C68642;
+            --cream:#FDF6EC;--cream-dark:#F5E6D0;--white:#FFFEF9;--text-dark:#1A0F08;
+            --text-muted:#7A5C45;--success:#27AE60;--error:#C0392B;--sidebar-w:260px;}
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text-dark);display:flex;min-height:100vh;}
+        .sidebar{width:var(--sidebar-w);background:linear-gradient(175deg,var(--brown-dark),var(--brown-mid));
+            position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;padding:32px 0;z-index:100;}
+        .sidebar-brand{text-align:center;padding:0 24px 32px;border-bottom:1px solid rgba(255,255,255,.1);}
+        .sidebar-brand .logo{font-size:38px;display:block;margin-bottom:8px;}
+        .sidebar-brand h2{font-family:'Playfair Display',serif;color:var(--cream);font-size:1.3rem;}
+        .sidebar-brand small{color:var(--caramel);font-size:.75rem;letter-spacing:1px;text-transform:uppercase;}
+        nav{flex:1;padding:8px 16px;}
+        .nav-section{font-size:.68rem;letter-spacing:1.5px;text-transform:uppercase;color:rgba(253,246,236,.4);padding:14px 12px 5px;}
+        .nav-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;margin-bottom:3px;
+            color:rgba(253,246,236,.8);font-size:.87rem;text-decoration:none;transition:all .2s;}
+        .nav-item:hover,.nav-item.active{background:rgba(196,134,66,.25);color:var(--cream);}
+        .nav-icon{font-size:16px;width:20px;text-align:center;}
+        .sidebar-footer{padding:0 16px 16px;}
+        .logout-btn{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;
+            color:rgba(253,246,236,.6);font-size:.85rem;text-decoration:none;border:1px solid rgba(255,255,255,.1);transition:all .2s;}
+        .logout-btn:hover{background:rgba(192,57,43,.25);color:#FF8A80;border-color:rgba(192,57,43,.4);}
+        .main{margin-left:var(--sidebar-w);flex:1;}
+        .topbar{background:var(--white);padding:18px 36px;border-bottom:1px solid var(--cream-dark);
+            display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:50;box-shadow:0 2px 12px rgba(44,24,16,.06);}
+        .topbar a{color:var(--text-muted);font-size:.84rem;text-decoration:none;}
+        .topbar a:hover{color:var(--brown-warm);}
+        .topbar .sep{color:var(--text-muted);}
+        .topbar h1{font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--brown-dark);}
+        .content{padding:32px 36px;max-width:960px;}
+        .checkout-grid{display:grid;grid-template-columns:1fr 380px;gap:24px;align-items:start;}
+
+        /* Order summary card */
+        .summary-card{background:var(--white);border-radius:20px;border:1px solid var(--cream-dark);
+            overflow:hidden;position:sticky;top:90px;animation:fadeSlideUp .4s ease both;}
+        .summary-header{background:linear-gradient(135deg,var(--brown-warm),var(--brown-mid));padding:20px 24px;}
+        .summary-header h3{font-family:'Playfair Display',serif;color:var(--cream);font-size:1.1rem;}
+        .summary-body{padding:20px 24px;}
+        .product-row{display:flex;align-items:center;gap:14px;margin-bottom:16px;
+            padding-bottom:16px;border-bottom:1px solid var(--cream-dark);}
+        .product-thumb{width:56px;height:56px;border-radius:12px;
+            background:linear-gradient(135deg,var(--cream-dark),#e8d0b0);
+            display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden;flex-shrink:0;}
+        .product-thumb img{width:100%;height:100%;object-fit:cover;}
+        .product-info-name{font-weight:600;color:var(--brown-dark);font-size:.9rem;}
+        .product-info-cat{color:var(--text-muted);font-size:.78rem;margin-top:2px;}
+        .qty-control{display:flex;align-items:center;gap:10px;margin-top:8px;}
+        .qty-btn{width:28px;height:28px;border-radius:8px;border:1.5px solid var(--cream-dark);
+            background:var(--cream);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;
+            transition:all .2s;}
+        .qty-btn:hover{border-color:var(--caramel);background:var(--caramel);color:white;}
+        .qty-display{font-weight:600;color:var(--brown-dark);min-width:24px;text-align:center;}
+        #qtyInput{display:none;}
+        .price-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:.9rem;}
+        .price-row.total{font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--brown-dark);
+            font-weight:700;border-top:1px solid var(--cream-dark);padding-top:12px;margin-top:4px;}
+        .price-val{color:var(--caramel);font-weight:600;}
+
+        /* Form card */
+        .form-card{background:var(--white);border-radius:20px;border:1px solid var(--cream-dark);
+            padding:28px 32px;animation:fadeSlideUp .4s ease both .1s;}
+        .form-section{font-family:'Playfair Display',serif;font-size:1rem;color:var(--brown-dark);
+            margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--cream-dark);}
+        .form-group{margin-bottom:16px;}
+        .form-group label{display:block;font-size:.75rem;font-weight:500;letter-spacing:.5px;
+            text-transform:uppercase;color:var(--text-dark);margin-bottom:7px;}
+        .form-group input,.form-group textarea,.form-group select{
+            width:100%;padding:11px 14px;border:1.5px solid #E8D8C4;border-radius:11px;
+            font-family:inherit;font-size:.875rem;color:var(--text-dark);background:var(--cream);outline:none;transition:all .2s;}
+        .form-group input:focus,.form-group textarea:focus,.form-group select:focus{
+            border-color:var(--caramel);background:var(--white);box-shadow:0 0 0 3px rgba(196,134,66,.1);}
+        .form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+
+        /* Delivery toggle */
+        .delivery-toggle{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+        .delivery-option{position:relative;}
+        .delivery-option input{position:absolute;opacity:0;width:0;height:0;}
+        .delivery-label{display:flex;align-items:center;gap:10px;padding:14px 16px;
+            border:1.5px solid #E8D8C4;border-radius:12px;cursor:pointer;transition:all .2s;background:var(--cream);}
+        .delivery-option input:checked + .delivery-label{border-color:var(--caramel);
+            background:rgba(196,134,66,.08);box-shadow:0 0 0 3px rgba(196,134,66,.1);}
+        .delivery-icon{font-size:22px;}
+        .delivery-text{font-size:.875rem;font-weight:500;color:var(--brown-dark);}
+        .delivery-sub{font-size:.75rem;color:var(--text-muted);}
+
+        .btn-place{width:100%;padding:15px;background:linear-gradient(135deg,var(--brown-warm),var(--brown-mid));
+            color:var(--cream);border:none;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;
+            cursor:pointer;transition:all .25s;margin-top:20px;}
+        .btn-place:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(92,51,23,.3);}
+
+        @keyframes fadeSlideUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+        @media(max-width:900px){.sidebar{display:none;}.main{margin-left:0;}}
+        @media(max-width:720px){.checkout-grid{grid-template-columns:1fr;}.content{padding:20px;}}
+    </style>
+</head>
+<body>
+<aside class="sidebar">
+    <div class="sidebar-brand">
+        <span class="logo">🍫</span>
+        <h2>Sugar Corner</h2>
+        <small>Customer Portal</small>
+    </div>
+    <nav>
+        <div class="nav-section">Main Menu</div>
+        <a class="nav-item" href="/customer/dashboard"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a class="nav-item" href="/customer/profile"><span class="nav-icon">👤</span> My Profile</a>
+        <div class="nav-section">Shop</div>
+        <a class="nav-item" href="/products"><span class="nav-icon">🍫</span> Browse Brownies</a>
+        <a class="nav-item active" href="/orders"><span class="nav-icon">📦</span> My Orders</a>
+        <div class="nav-section">Support</div>
+        <a class="nav-item" href="#"><span class="nav-icon">💬</span> Contact Us</a>
+    </nav>
+    <div class="sidebar-footer">
+        <a class="logout-btn" href="/logout"><span>🚪</span> Sign Out</a>
+    </div>
+</aside>
+
+<div class="main">
+    <div class="topbar">
+        <a href="/products">Brownies</a>
+        <span class="sep">›</span>
+        <a th:href="'/products/' + ${product.id}" th:text="${product.name}">Product</a>
+        <span class="sep">›</span>
+        <h1>Checkout</h1>
+    </div>
+    <div class="content">
+        <div class="checkout-grid">
+
+            <!-- LEFT: form -->
+            <div class="form-card">
+                <form method="POST" action="/orders/place" id="checkoutForm">
+                    <input type="hidden" name="productId" th:value="${product.id}"/>
+                    <input type="hidden" name="quantity" id="qtyInput" th:value="${qty}"/>
+
+                    <div class="form-section">🚚 Delivery Method</div>
+                    <div class="delivery-toggle">
+                        <div class="delivery-option">
+                            <input type="radio" name="deliveryType" id="delivery" value="DELIVERY" checked/>
+                            <label class="delivery-label" for="delivery">
+                                <span class="delivery-icon">🚚</span>
+                                <div><div class="delivery-text">Delivery</div><div class="delivery-sub">To your address</div></div>
+                            </label>
+                        </div>
+                        <div class="delivery-option">
+                            <input type="radio" name="deliveryType" id="pickup" value="PICKUP"/>
+                            <label class="delivery-label" for="pickup">
+                                <span class="delivery-icon">🏪</span>
+                                <div><div class="delivery-text">Pickup</div><div class="delivery-sub">Collect from shop</div></div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="addressSection">
+                        <div class="form-section">📍 Delivery Address</div>
+                        <div class="form-group">
+                            <label>Street Address</label>
+                            <input type="text" name="deliveryAddress"
+                                   th:value="${customer.addressLine1 != null} ? ${customer.addressLine1} : ''"
+                                   placeholder="No. 12, Galle Road"/>
+                        </div>
+                        <div class="form-grid-2">
+                            <div class="form-group">
+                                <label>City</label>
+                                <input type="text" name="deliveryCity"
+                                       th:value="${customer.city != null} ? ${customer.city} : ''"
+                                       placeholder="Colombo"/>
+                            </div>
+                            <div class="form-group">
+                                <label>Postal Code</label>
+                                <input type="text" name="deliveryPostalCode"
+                                       th:value="${customer.postalCode != null} ? ${customer.postalCode} : ''"
+                                       placeholder="00300"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">📝 Special Requests</div>
+                    <div class="form-group">
+                        <label>Customization (for this item)</label>
+                        <input type="text" name="customization" placeholder="e.g. No nuts, extra frosting"/>
+                    </div>
+                    <div class="form-group">
+                        <label>Order Note (for the shop)</label>
+                        <textarea name="customerNote" rows="3"
+                                  placeholder="Any other instructions for your order…"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-place">🛒 Place Order →</button>
+                </form>
+            </div>
+
+            <!-- RIGHT: summary -->
+            <div class="summary-card">
+                <div class="summary-header"><h3>Order Summary</h3></div>
+                <div class="summary-body">
+                    <div class="product-row">
+                        <div class="product-thumb">
+                            <img th:if="${product.imagePath != null}" th:src="'/' + ${product.imagePath}" th:alt="${product.name}"/>
+                            <span th:unless="${product.imagePath != null}">🍫</span>
+                        </div>
+                        <div>
+                            <div class="product-info-name" th:text="${product.name}">Brownie</div>
+                            <div class="product-info-cat" th:text="${product.category}">Classic</div>
+                            <div class="qty-control">
+                                <button type="button" class="qty-btn" onclick="changeQty(-1)">−</button>
+                                <span class="qty-display" id="qtyShow" th:text="${qty}">1</span>
+                                <button type="button" class="qty-btn" onclick="changeQty(1)">+</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="price-row">
+                        <span>Unit price</span>
+                        <span class="price-val"
+                              th:text="'Rs. ' + ${#numbers.formatDecimal(product.price,1,'COMMA',2,'POINT')}">Rs. 0.00</span>
+                    </div>
+                    <div class="price-row">
+                        <span>Quantity</span>
+                        <span id="qtyLabel" th:text="${qty}">1</span>
+                    </div>
+                    <div class="price-row total">
+                        <span>Total</span>
+                        <span class="price-val" id="totalDisplay">Rs. 0.00</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    const unitPrice = /*[[${product.price}]]*/ 0;
+    let qty = /*[[${qty}]]*/ 1;
+
+    function updateDisplay() {
+        document.getElementById('qtyShow').textContent = qty;
+        document.getElementById('qtyLabel').textContent = qty;
+        document.getElementById('qtyInput').value = qty;
+        const total = (unitPrice * qty).toFixed(2);
+        document.getElementById('totalDisplay').textContent =
+            'Rs. ' + parseFloat(total).toLocaleString('en-LK', {minimumFractionDigits:2});
+    }
+
+    function changeQty(delta) {
+        qty = Math.max(1, qty + delta);
+        updateDisplay();
+    }
+
+    // Toggle address section
+    document.querySelectorAll('input[name="deliveryType"]').forEach(r => {
+        r.addEventListener('change', () => {
+            document.getElementById('addressSection').style.display =
+                r.value === 'PICKUP' ? 'none' : 'block';
+        });
+    });
+
+    updateDisplay();
+</script>
+</body>
+</html>

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Orders – Sugar Corner Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <style>
+        :root{--dark:#111;--dark2:#1a1a1a;--accent:#C68642;--accent2:#8B4513;--gold:#D4A843;
+            --cream:#FDF6EC;--muted:#888;--sidebar-w:260px;
+            --success:#51CF66;--error:#FF6B6B;--warn:#FFA94D;--border:rgba(255,255,255,.07);}
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:'DM Sans',sans-serif;background:#0f0f0f;color:#e8e0d8;display:flex;min-height:100vh;}
+        .sidebar{width:var(--sidebar-w);background:var(--dark);position:fixed;top:0;left:0;height:100vh;
+            display:flex;flex-direction:column;padding:28px 0;border-right:1px solid var(--border);z-index:100;}
+        .sidebar-brand{text-align:center;padding:0 24px 28px;border-bottom:1px solid var(--border);}
+        .sidebar-brand .logo{font-size:36px;display:block;margin-bottom:8px;}
+        .sidebar-brand h2{font-family:'Playfair Display',serif;font-size:1.25rem;
+            background:linear-gradient(135deg,var(--cream),var(--accent));
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+        .role-badge{display:inline-block;margin-top:6px;padding:3px 12px;
+            background:rgba(196,134,66,.2);color:var(--accent);border:1px solid rgba(196,134,66,.3);
+            border-radius:100px;font-size:.7rem;letter-spacing:1px;text-transform:uppercase;}
+        nav{flex:1;padding:8px 16px;overflow-y:auto;}
+        .nav-section{font-size:.65rem;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.25);padding:16px 12px 6px;}
+        .nav-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;margin-bottom:3px;
+            color:rgba(255,255,255,.55);font-size:.86rem;text-decoration:none;transition:all .2s;}
+        .nav-item:hover,.nav-item.active{background:rgba(196,134,66,.15);color:var(--cream);}
+        .nav-item.active{border-left:3px solid var(--accent);padding-left:11px;}
+        .nav-icon{font-size:16px;width:20px;text-align:center;}
+        .nav-badge{margin-left:auto;padding:2px 8px;background:rgba(255,107,107,.25);color:#FF8A80;border-radius:100px;font-size:.7rem;}
+        .sidebar-footer{padding:16px;border-top:1px solid var(--border);}
+        .logout-btn{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;
+            color:rgba(255,255,255,.4);font-size:.84rem;text-decoration:none;transition:all .2s;}
+        .logout-btn:hover{background:rgba(255,107,107,.1);color:#FF8A80;}
+        .main{margin-left:var(--sidebar-w);flex:1;}
+        .topbar{background:var(--dark2);padding:18px 36px;border-bottom:1px solid var(--border);
+            display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+        .topbar-left{display:flex;align-items:center;gap:10px;}
+        .topbar-left a{color:var(--muted);font-size:.84rem;text-decoration:none;}
+        .topbar-left a:hover{color:var(--accent);}
+        .topbar-left .sep{color:var(--muted);}
+        .topbar h1{font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--cream);}
+        .notif-wrap{position:relative;display:inline-block;}
+        .notif-btn{width:38px;height:38px;border-radius:10px;background:rgba(196,134,66,.15);
+            border:1px solid rgba(196,134,66,.2);display:flex;align-items:center;justify-content:center;font-size:16px;}
+        .notif-dot{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;border-radius:100px;
+            background:#FF6B6B;color:white;font-size:.65rem;font-weight:700;
+            display:flex;align-items:center;justify-content:center;padding:0 4px;}
+        .content{padding:28px 36px;}
+
+        /* Notification banner */
+        .notif-banner{background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.2);
+            border-radius:12px;padding:14px 18px;margin-bottom:20px;
+            display:flex;align-items:center;gap:10px;font-size:.875rem;color:#FF8A80;}
+        .notif-banner strong{color:#FF6B6B;}
+
+        /* Stats strip */
+        .stats-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px;}
+        .stat-mini{background:var(--dark2);border-radius:12px;border:1px solid var(--border);padding:16px 18px;}
+        .stat-mini-num{font-family:'Playfair Display',serif;font-size:1.8rem;color:var(--cream);}
+        .stat-mini-label{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
+
+        /* Search bar */
+        .search-bar{background:var(--dark2);border-radius:14px;border:1px solid var(--border);
+            padding:18px 22px;margin-bottom:20px;display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;}
+        .search-field{display:flex;flex-direction:column;gap:6px;flex:1;min-width:160px;}
+        .search-field label{font-size:.72rem;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);}
+        .search-field input{padding:9px 12px;background:#222;border:1px solid var(--border);border-radius:9px;
+            color:var(--cream);font-family:inherit;font-size:.875rem;outline:none;transition:all .2s;}
+        .search-field input:focus{border-color:rgba(196,134,66,.4);}
+        .search-field input::placeholder{color:rgba(255,255,255,.2);}
+        .btn-search{padding:9px 22px;background:linear-gradient(135deg,var(--accent2),var(--accent));
+            color:#fff;border:none;border-radius:9px;font-family:inherit;font-size:.875rem;cursor:pointer;transition:all .2s;}
+        .btn-search:hover{transform:translateY(-1px);}
+        .btn-clear-s{padding:9px 16px;background:transparent;color:var(--muted);
+            border:1px solid var(--border);border-radius:9px;font-family:inherit;font-size:.875rem;
+            text-decoration:none;display:flex;align-items:center;transition:all .2s;}
+        .btn-clear-s:hover{border-color:rgba(196,134,66,.3);color:var(--accent);}
+
+        /* Table */
+        .table-wrap{background:var(--dark2);border-radius:16px;border:1px solid var(--border);overflow:hidden;}
+        table{width:100%;border-collapse:collapse;}
+        thead th{padding:13px 16px;text-align:left;font-size:.7rem;font-weight:500;letter-spacing:1px;
+            text-transform:uppercase;color:var(--muted);background:rgba(255,255,255,.02);border-bottom:1px solid var(--border);}
+        tbody tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s;}
+        tbody tr:last-child{border-bottom:none;}
+        tbody tr:hover{background:rgba(196,134,66,.04);}
+        td{padding:13px 16px;font-size:.875rem;vertical-align:middle;}
+
+        .customer-cell .c-name{font-weight:500;color:var(--cream);}
+        .customer-cell .c-email{font-size:.75rem;color:var(--muted);}
+        .items-cell{font-size:.78rem;color:rgba(255,255,255,.6);max-width:180px;}
+
+        .chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:100px;font-size:.72rem;font-weight:600;}
+        .chip-orange{background:rgba(230,126,34,.15);color:#E67E22;}
+        .chip-blue  {background:rgba(41,128,185,.15);color:#2980B9;}
+        .chip-purple{background:rgba(142,68,173,.15);color:#9B59B6;}
+        .chip-teal  {background:rgba(26,188,156,.15);color:#1ABC9C;}
+        .chip-green {background:rgba(81,207,102,.12);color:var(--success);}
+        .chip-red   {background:rgba(255,107,107,.12);color:var(--error);}
+        .chip-grey  {background:rgba(255,255,255,.07);color:var(--muted);}
+
+        .btn-sm{padding:5px 14px;border-radius:7px;font-family:inherit;font-size:.76rem;font-weight:500;
+            cursor:pointer;border:none;transition:all .18s;text-decoration:none;display:inline-flex;align-items:center;}
+        .btn-view{background:rgba(196,134,66,.15);color:var(--accent);}
+        .btn-view:hover{background:rgba(196,134,66,.28);}
+
+        .empty-state{text-align:center;padding:56px 20px;}
+        .empty-state .icon{font-size:44px;margin-bottom:10px;}
+        .empty-state p{color:var(--muted);font-size:.9rem;}
+
+        @media(max-width:900px){.sidebar{display:none;}.main{margin-left:0;}}
+        @media(max-width:640px){.content{padding:16px;}.stats-strip{grid-template-columns:1fr 1fr;}}
+    </style>
+</head>
+<body>
+<aside class="sidebar">
+    <div class="sidebar-brand">
+        <span class="logo">🍫</span>
+        <h2>Sugar Corner</h2>
+        <span class="role-badge">Admin Panel</span>
+    </div>
+    <nav>
+        <div class="nav-section">Overview</div>
+        <a class="nav-item" href="/admin/dashboard"><span class="nav-icon">📊</span> Dashboard</a>
+        <div class="nav-section">Customer Mgmt</div>
+        <a class="nav-item" href="/admin/customers"><span class="nav-icon">👥</span> All Customers</a>
+        <div class="nav-section">Product Mgmt</div>
+        <a class="nav-item" href="/admin/products"><span class="nav-icon">🍫</span> All Products</a>
+        <a class="nav-item" href="/admin/products/add"><span class="nav-icon">➕</span> Add Product</a>
+        <div class="nav-section">Order Mgmt</div>
+        <a class="nav-item active" href="/admin/orders"><span class="nav-icon">📦</span> All Orders
+            <span class="nav-badge" th:if="${pendingCount > 0}" th:text="${pendingCount}">0</span>
+        </a>
+        <div class="nav-section">Coming Soon</div>
+        <a class="nav-item" href="#"><span class="nav-icon">💳</span> Payments</a>
+        <a class="nav-item" href="#"><span class="nav-icon">💬</span> Inquiries</a>
+    </nav>
+    <div class="sidebar-footer">
+        <a class="logout-btn" href="/logout"><span>🚪</span> Sign Out</a>
+    </div>
+</aside>
+
+<div class="main">
+    <div class="topbar">
+        <div class="topbar-left">
+            <a href="/admin/dashboard">Dashboard</a>
+            <span class="sep">›</span>
+            <h1>Orders</h1>
+        </div>
+        <div class="notif-wrap">
+            <div class="notif-btn">🔔</div>
+            <div class="notif-dot" th:if="${pendingCount > 0}" th:text="${pendingCount}">0</div>
+        </div>
+    </div>
+    <div class="content">
+
+        <!-- Notification banner for new pending orders -->
+        <div class="notif-banner" th:if="${pendingCount > 0}">
+            🔔 You have <strong th:text="${pendingCount}">0</strong> pending order(s) waiting for confirmation!
+            <span th:if="${newToday > 0}" th:text="'(' + ${newToday} + ' new today)'"></span>
+        </div>
+
+        <!-- Stats strip -->
+        <div class="stats-strip">
+            <div class="stat-mini">
+                <div class="stat-mini-num" th:text="${orders.size()}">0</div>
+                <div class="stat-mini-label">Showing Orders</div>
+            </div>
+            <div class="stat-mini">
+                <div class="stat-mini-num" th:text="${pendingCount}">0</div>
+                <div class="stat-mini-label">⏳ Pending</div>
+            </div>
+            <div class="stat-mini">
+                <div class="stat-mini-num" th:text="${newToday}">0</div>
+                <div class="stat-mini-label">🆕 New Today</div>
+            </div>
+        </div>
+
+        <!-- Search bar -->
+        <form class="search-bar" method="GET" action="/admin/orders">
+            <div class="search-field">
+                <label>Search by Order ID</label>
+                <input type="text" name="orderId" placeholder="e.g. 42" th:value="${searchOrderId}"/>
+            </div>
+            <div class="search-field">
+                <label>Search by Date</label>
+                <input type="date" name="date" th:value="${searchDate}"/>
+            </div>
+            <button type="submit" class="btn-search">🔍 Search</button>
+            <a href="/admin/orders" class="btn-clear-s">✕ Clear</a>
+        </form>
+
+        <!-- Table -->
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>#ID</th>
+                    <th>Customer</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td colspan="8">
+                        <div class="empty-state">
+                            <div class="icon">📦</div>
+                            <p>No orders found.</p>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:each="o : ${orders}">
+                    <td style="font-weight:600;color:var(--accent);" th:text="'#' + ${o.id}">#1</td>
+                    <td>
+                        <div class="customer-cell">
+                            <div class="c-name" th:text="${o.customerFullName}">Name</div>
+                            <div class="c-email" th:text="${o.customerEmail}">email</div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="items-cell">
+                <span th:each="item,i : ${o.items}">
+                  <span th:text="${item.quantity + 'x ' + item.productName}">1x Brownie</span>
+                  <span th:if="${!i.last}">, </span>
+                </span>
+                        </div>
+                    </td>
+                    <td style="font-weight:600;color:var(--cream);"
+                        th:text="'Rs. ' + ${#numbers.formatDecimal(o.totalAmount,1,'COMMA',2,'POINT')}">Rs. 0</td>
+                    <td th:text="${o.deliveryType == 'PICKUP'} ? '🏪 Pickup' : '🚚 Delivery'">Delivery</td>
+                    <td>
+              <span class="chip"
+                    th:text="${o.statusLabel}">Status</span>
+                    </td>
+                    <td th:text="${#temporals.format(o.createdAt,'dd MMM yyyy')}">Date</td>
+                    <td>
+                        <a th:href="'/admin/orders/' + ${o.id}" class="btn-sm btn-view">View →</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

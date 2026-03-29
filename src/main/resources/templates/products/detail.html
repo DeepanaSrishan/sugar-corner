@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${product.name + ' – Sugar Corner'}">Brownie – Sugar Corner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <style>
+        :root{
+            --brown-dark:#2C1810;--brown-mid:#5C3317;--brown-warm:#8B4513;
+            --caramel:#C68642;--cream:#FDF6EC;--cream-dark:#F5E6D0;
+            --white:#FFFEF9;--text-dark:#1A0F08;--text-muted:#7A5C45;
+            --success:#27AE60;--error:#C0392B;--sidebar-w:260px;
+        }
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text-dark);display:flex;min-height:100vh;}
+
+        /* sidebar – identical to list.html */
+        .sidebar{width:var(--sidebar-w);background:linear-gradient(175deg,var(--brown-dark),var(--brown-mid));
+            position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;padding:32px 0;z-index:100;}
+        .sidebar-brand{text-align:center;padding:0 24px 32px;border-bottom:1px solid rgba(255,255,255,.1);}
+        .sidebar-brand .logo{font-size:38px;display:block;margin-bottom:8px;}
+        .sidebar-brand h2{font-family:'Playfair Display',serif;color:var(--cream);font-size:1.3rem;}
+        .sidebar-brand small{color:var(--caramel);font-size:.75rem;letter-spacing:1px;text-transform:uppercase;}
+        nav{flex:1;padding:8px 16px;overflow-y:auto;}
+        .nav-section{font-size:.68rem;letter-spacing:1.5px;text-transform:uppercase;color:rgba(253,246,236,.4);padding:14px 12px 5px;}
+        .nav-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;margin-bottom:3px;
+            color:rgba(253,246,236,.8);font-size:.87rem;text-decoration:none;transition:all .2s;}
+        .nav-item:hover,.nav-item.active{background:rgba(196,134,66,.25);color:var(--cream);}
+        .nav-icon{font-size:16px;width:20px;text-align:center;}
+        .sidebar-footer{padding:0 16px 16px;}
+        .logout-btn{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;
+            color:rgba(253,246,236,.6);font-size:.85rem;text-decoration:none;border:1px solid rgba(255,255,255,.1);transition:all .2s;}
+        .logout-btn:hover{background:rgba(192,57,43,.25);color:#FF8A80;border-color:rgba(192,57,43,.4);}
+
+        .main{margin-left:var(--sidebar-w);flex:1;}
+        .topbar{background:var(--white);padding:18px 36px;border-bottom:1px solid var(--cream-dark);
+            display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:50;
+            box-shadow:0 2px 12px rgba(44,24,16,.06);}
+        .topbar a{color:var(--text-muted);font-size:.84rem;text-decoration:none;}
+        .topbar a:hover{color:var(--brown-warm);}
+        .topbar .sep{color:var(--text-muted);}
+        .topbar h1{font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--brown-dark);}
+
+        .content{padding:36px;max-width:960px;}
+
+        /* ── Detail card ── */
+        .detail-card{
+            background:var(--white);border-radius:22px;overflow:hidden;
+            border:1px solid var(--cream-dark);display:grid;
+            grid-template-columns:1fr 1fr;
+            animation:fadeSlideUp .5s ease both;
+            box-shadow:0 8px 32px rgba(44,24,16,.06);
+        }
+        .detail-img{background:linear-gradient(135deg,var(--cream-dark),#e8d0b0);
+            display:flex;align-items:center;justify-content:center;font-size:100px;min-height:380px;
+            position:relative;overflow:hidden;}
+        .detail-img img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;}
+        .featured-tag{position:absolute;top:20px;left:20px;
+            background:linear-gradient(135deg,var(--caramel),var(--brown-warm));
+            color:var(--white);font-size:.75rem;font-weight:600;letter-spacing:.5px;text-transform:uppercase;
+            padding:6px 14px;border-radius:100px;}
+
+        .detail-body{padding:40px;}
+        .cat-badge{display:inline-block;padding:4px 14px;background:var(--cream-dark);
+            color:var(--brown-warm);font-size:.72rem;font-weight:500;letter-spacing:1px;text-transform:uppercase;
+            border-radius:100px;margin-bottom:14px;}
+        .detail-name{font-family:'Playfair Display',serif;font-size:2rem;color:var(--brown-dark);
+            line-height:1.2;margin-bottom:14px;}
+        .detail-price{font-family:'Playfair Display',serif;font-size:2.2rem;color:var(--caramel);
+            margin-bottom:20px;}
+        .detail-price small{font-size:1rem;color:var(--text-muted);font-weight:300;}
+        .detail-desc{color:var(--text-muted);font-size:.925rem;line-height:1.75;margin-bottom:24px;}
+
+        .stock-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;
+            border-radius:100px;font-size:.8rem;font-weight:500;margin-bottom:28px;}
+        .stock-pill.in   {background:rgba(39,174,96,.1);color:var(--success);}
+        .stock-pill.low  {background:rgba(230,126,34,.1);color:#E67E22;}
+        .stock-pill.out  {background:rgba(192,57,43,.08);color:var(--error);}
+
+        .detail-actions{display:flex;gap:12px;flex-wrap:wrap;}
+        .btn-order{padding:14px 34px;background:linear-gradient(135deg,var(--brown-warm),var(--brown-mid));
+            color:var(--cream);border:none;border-radius:12px;font-family:inherit;font-size:.95rem;font-weight:600;
+            cursor:pointer;text-decoration:none;transition:all .25s;}
+        .btn-order:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(92,51,23,.3);}
+        .btn-order.disabled{background:#ddd;color:#999;cursor:not-allowed;pointer-events:none;}
+        .btn-back{padding:14px 24px;background:transparent;color:var(--text-muted);
+            border:1.5px solid #E8D8C4;border-radius:12px;font-family:inherit;font-size:.9rem;
+            text-decoration:none;transition:all .2s;display:flex;align-items:center;}
+        .btn-back:hover{border-color:var(--caramel);color:var(--brown-warm);}
+
+        /* ── Related brownies ── */
+        .related-section{margin-top:36px;animation:fadeSlideUp .5s ease both .2s;}
+        .related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-top:14px;}
+        .rel-card{background:var(--white);border-radius:14px;overflow:hidden;border:1px solid var(--cream-dark);
+            text-decoration:none;transition:all .2s;display:block;}
+        .rel-card:hover{transform:translateY(-4px);box-shadow:0 10px 28px rgba(44,24,16,.1);border-color:var(--caramel);}
+        .rel-img{height:110px;background:linear-gradient(135deg,var(--cream-dark),#e8d0b0);
+            display:flex;align-items:center;justify-content:center;font-size:40px;overflow:hidden;}
+        .rel-img img{width:100%;height:100%;object-fit:cover;}
+        .rel-body{padding:12px;}
+        .rel-name{font-family:'Playfair Display',serif;font-size:.9rem;color:var(--brown-dark);}
+        .rel-price{color:var(--caramel);font-weight:600;font-size:.85rem;margin-top:3px;}
+
+        @keyframes fadeSlideUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+
+        @media(max-width:900px){.sidebar{display:none;}.main{margin-left:0;}}
+        @media(max-width:680px){.detail-card{grid-template-columns:1fr;}.detail-img{min-height:240px;}.content{padding:20px;}}
+    </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+    <div class="sidebar-brand">
+        <span class="logo">🍫</span>
+        <h2>Sugar Corner</h2>
+        <small>Customer Portal</small>
+    </div>
+    <nav>
+        <div class="nav-section">Main Menu</div>
+        <a class="nav-item" href="/customer/dashboard"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a class="nav-item" href="/customer/profile"><span class="nav-icon">👤</span> My Profile</a>
+        <div class="nav-section">Shop</div>
+        <a class="nav-item active" href="/products"><span class="nav-icon">🍫</span> Browse Brownies</a>
+        <a class="nav-item" href="#"><span class="nav-icon">📦</span> My Orders</a>
+        <div class="nav-section">Support</div>
+        <a class="nav-item" href="#"><span class="nav-icon">💬</span> Contact Us</a>
+        <a class="nav-item" href="#"><span class="nav-icon">⭐</span> My Feedback</a>
+    </nav>
+    <div class="sidebar-footer">
+        <a class="logout-btn" th:if="${customer != null}" href="/logout"><span>🚪</span> Sign Out</a>
+        <a class="logout-btn" th:if="${customer == null}" href="/login"><span>🔐</span> Sign In</a>
+    </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+    <div class="topbar">
+        <a href="/products">Brownies</a>
+        <span class="sep">›</span>
+        <h1 th:text="${product.name}">Brownie Name</h1>
+    </div>
+
+    <div class="content">
+
+        <div class="detail-card">
+            <!-- Image -->
+            <div class="detail-img">
+                <span th:unless="${product.imagePath}">🍫</span>
+                <img th:if="${product.imagePath}" th:src="'/' + ${product.imagePath}" th:alt="${product.name}"/>
+                <div class="featured-tag" th:if="${product.featured}">⭐ Popular Pick</div>
+            </div>
+
+            <!-- Info -->
+            <div class="detail-body">
+                <div class="cat-badge" th:text="${product.category}">Classic</div>
+                <div class="detail-name" th:text="${product.name}">Brownie Name</div>
+                <div class="detail-price">
+                    Rs. <span th:text="${#numbers.formatDecimal(product.price,1,'COMMA',2,'POINT')}">350.00</span>
+                    <small>per piece</small>
+                </div>
+                <p class="detail-desc" th:text="${product.description}">Description goes here.</p>
+
+                <!-- Stock status -->
+                <div th:if="${product.stockLabel == 'In Stock'}"  class="stock-pill in">● In Stock</div>
+                <div th:if="${product.stockLabel == 'Low Stock'}" class="stock-pill low">● Low Stock – hurry!</div>
+                <div th:if="${product.stockLabel == 'Out of Stock'}" class="stock-pill out">● Out of Stock</div>
+
+                <!-- Actions -->
+                <div class="detail-actions">
+                    <a th:if="${product.inStock}" href="#" class="btn-order">🛒 Add to Order</a>
+                    <span th:unless="${product.inStock}" class="btn-order disabled">🛒 Unavailable</span>
+                    <a href="/products" class="btn-back">← Back</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Related / Featured --><div class="related-section" th:if="${featured != null and !#lists.isEmpty(featured)}">
+        <div style="font-family:'Playfair Display',serif; font-size:1.25rem; color:var(--brown-dark);">
+            You might also like
+        </div>
+        <div class="related-grid">
+            <th:block th:each="p : ${featured}">
+                <a th:if="${product != null and p.id != product.id}"
+                   th:href="@{/products/{id}(id=${p.id})}"
+                   class="rel-card"
+                   style="text-decoration:none;">
+
+                    <div class="rel-img">
+                        <img th:if="${p.imagePath != null}" th:src="@{'/' + ${p.imagePath}}" th:alt="${p.name}"/>
+                        <span th:unless="${p.imagePath != null}">🍫</span>
+                    </div>
+
+                    <div class="rel-body">
+                        <div class="rel-name" th:text="${p.name}">Brownie</div>
+                        <div class="rel-price"
+                             th:text="${p.price != null} ? 'Rs. ' + ${#numbers.formatDecimal(p.price, 1, 'COMMA', 2, 'POINT')} : 'Rs. 0.00'">
+                            Rs. 350.00
+                        </div>
+                    </div>
+                </a>
+            </th:block>
+        </div>
+    </div>
+
+    </div>
+</div>
+
+</body>
+</html>

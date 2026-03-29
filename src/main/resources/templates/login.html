@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Login – Sugar Corner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+    <style>
+        :root {
+            --brown-dark:   #2C1810;
+            --brown-mid:    #5C3317;
+            --brown-warm:   #8B4513;
+            --caramel:      #C68642;
+            --cream:        #FDF6EC;
+            --cream-dark:   #F5E6D0;
+            --gold:         #D4A843;
+            --white:        #FFFEF9;
+            --text-dark:    #1A0F08;
+            --text-muted:   #7A5C45;
+            --error:        #C0392B;
+            --success:      #27AE60;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            font-family: 'DM Sans', sans-serif;
+            background: var(--cream);
+            overflow: hidden;
+        }
+
+        /* ── Left panel ── */
+        .panel-left {
+            flex: 1;
+            background: linear-gradient(145deg, var(--brown-dark) 0%, var(--brown-mid) 60%, var(--brown-warm) 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 50px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .panel-left::before {
+            content: '';
+            position: absolute;
+            width: 500px; height: 500px;
+            border-radius: 50%;
+            background: rgba(196,134,66,.15);
+            top: -100px; left: -100px;
+            animation: floatBubble 8s ease-in-out infinite;
+        }
+        .panel-left::after {
+            content: '';
+            position: absolute;
+            width: 300px; height: 300px;
+            border-radius: 50%;
+            background: rgba(212,168,67,.1);
+            bottom: -80px; right: -80px;
+            animation: floatBubble 10s ease-in-out infinite reverse;
+        }
+
+        @keyframes floatBubble {
+            0%, 100% { transform: translate(0,0) scale(1); }
+            50%       { transform: translate(20px,-20px) scale(1.05); }
+        }
+
+        .brand {
+            text-align: center;
+            z-index: 1;
+            animation: fadeSlideUp .8s ease both;
+        }
+        .brand-icon {
+            font-size: 72px;
+            display: block;
+            margin-bottom: 16px;
+            filter: drop-shadow(0 4px 12px rgba(0,0,0,.4));
+            animation: bounceIn 1s ease both .3s;
+        }
+        @keyframes bounceIn {
+            0%   { transform: scale(0) rotate(-10deg); opacity: 0; }
+            60%  { transform: scale(1.1) rotate(3deg); }
+            100% { transform: scale(1) rotate(0); opacity: 1; }
+        }
+        .brand h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.8rem;
+            color: var(--cream);
+            line-height: 1.1;
+            letter-spacing: -1px;
+        }
+        .brand p {
+            color: var(--caramel);
+            font-size: .95rem;
+            font-weight: 300;
+            margin-top: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .panel-features {
+            margin-top: 60px;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            animation: fadeSlideUp .8s ease both .5s;
+        }
+        .feature {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            color: rgba(253,246,236,.85);
+        }
+        .feature-icon {
+            width: 40px; height: 40px;
+            border-radius: 12px;
+            background: rgba(196,134,66,.25);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        .feature span { font-size: .88rem; font-weight: 300; }
+
+        /* ── Right panel ── */
+        .panel-right {
+            width: 480px;
+            background: var(--white);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 60px 50px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .form-header {
+            margin-bottom: 36px;
+            animation: fadeSlideUp .6s ease both;
+        }
+        .form-header .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--cream-dark);
+            color: var(--brown-warm);
+            font-size: .75rem;
+            font-weight: 500;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 6px 14px;
+            border-radius: 100px;
+            margin-bottom: 16px;
+        }
+        .form-header h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            color: var(--brown-dark);
+            line-height: 1.2;
+        }
+        .form-header p {
+            color: var(--text-muted);
+            font-size: .9rem;
+            margin-top: 8px;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: .875rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: shake .4s ease;
+        }
+        .alert-error   { background: #FEE; border-left: 4px solid var(--error); color: var(--error); }
+        .alert-success { background: #EFD; border-left: 4px solid var(--success); color: var(--success); }
+        @keyframes shake {
+            0%,100% { transform: translateX(0); }
+            25%      { transform: translateX(-6px); }
+            75%      { transform: translateX(6px); }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            animation: fadeSlideUp .6s ease both;
+        }
+        .form-group:nth-child(2) { animation-delay: .1s; }
+        .form-group:nth-child(3) { animation-delay: .2s; }
+
+        label {
+            display: block;
+            font-size: .8rem;
+            font-weight: 500;
+            color: var(--text-dark);
+            letter-spacing: .5px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .input-wrap {
+            position: relative;
+        }
+        .input-wrap .icon {
+            position: absolute;
+            left: 14px; top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+            color: var(--caramel);
+            pointer-events: none;
+        }
+        input[type="email"],
+        input[type="password"],
+        input[type="text"] {
+            width: 100%;
+            padding: 13px 14px 13px 42px;
+            border: 1.5px solid #E8D8C4;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: .9rem;
+            color: var(--text-dark);
+            background: var(--cream);
+            transition: all .25s ease;
+            outline: none;
+        }
+        input:focus {
+            border-color: var(--caramel);
+            background: var(--white);
+            box-shadow: 0 0 0 4px rgba(196,134,66,.12);
+        }
+
+        .form-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            font-size: .85rem;
+        }
+        .remember { display: flex; align-items: center; gap: 8px; color: var(--text-muted); cursor: pointer; }
+        .remember input { width: auto; padding: 0; }
+        .forgot-link { color: var(--brown-warm); font-weight: 500; text-decoration: none; }
+        .forgot-link:hover { color: var(--caramel); }
+
+        .btn-primary {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--brown-warm), var(--brown-mid));
+            color: var(--cream);
+            border: none;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            letter-spacing: .5px;
+            transition: all .25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--caramel), var(--brown-warm));
+            opacity: 0;
+            transition: opacity .25s ease;
+        }
+        .btn-primary:hover::after { opacity: 1; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(92,51,23,.35); }
+        .btn-primary span { position: relative; z-index: 1; }
+
+        .divider {
+            text-align: center;
+            margin: 28px 0;
+            position: relative;
+            color: var(--text-muted);
+            font-size: .8rem;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            position: absolute;
+            top: 50%; width: 42%;
+            height: 1px;
+            background: #E8D8C4;
+        }
+        .divider::before { left: 0; }
+        .divider::after  { right: 0; }
+
+        .register-link {
+            text-align: center;
+            font-size: .875rem;
+            color: var(--text-muted);
+        }
+        .register-link a {
+            color: var(--brown-warm);
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .register-link a:hover { color: var(--caramel); }
+
+        .admin-link {
+            display: block;
+            text-align: center;
+            margin-top: 24px;
+            font-size: .8rem;
+            color: var(--text-muted);
+            padding-top: 24px;
+            border-top: 1px solid #E8D8C4;
+        }
+        .admin-link a { color: var(--brown-mid); font-weight: 500; text-decoration: none; }
+        .admin-link a:hover { color: var(--caramel); }
+
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .panel-left { display: none; }
+            .panel-right { width: 100%; padding: 40px 28px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- LEFT PANEL -->
+<div class="panel-left">
+    <div class="brand">
+        <span class="brand-icon">🍫</span>
+        <h1>Sugar Corner</h1>
+        <p>Artisan Brownie Shop</p>
+    </div>
+    <div class="panel-features">
+        <div class="feature">
+            <div class="feature-icon">🛒</div>
+            <span>Order fresh brownies delivered to your door</span>
+        </div>
+        <div class="feature">
+            <div class="feature-icon">⭐</div>
+            <span>Track your favourites and reorder with one click</span>
+        </div>
+        <div class="feature">
+            <div class="feature-icon">🎁</div>
+            <span>Exclusive deals for registered members</span>
+        </div>
+    </div>
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="panel-right">
+    <div class="form-header">
+        <div class="badge">🔐 Secure Login</div>
+        <h2>Welcome back!</h2>
+        <p>Sign in to your Sugar Corner account.</p>
+    </div>
+
+    <!-- Error / Success alerts -->
+    <div th:if="${error}" class="alert alert-error">⚠️ <span th:text="${error}"></span></div>
+    <div th:if="${success}" class="alert alert-success">✅ <span th:text="${success}"></span></div>
+
+    <form method="POST" action="/login">
+        <div class="form-group">
+            <label for="email">Email Address</label>
+            <div class="input-wrap">
+                <span class="icon">✉️</span>
+                <input type="email" id="email" name="email" placeholder="you@example.com" required/>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="password">Password</label>
+            <div class="input-wrap">
+                <span class="icon">🔑</span>
+                <input type="password" id="password" name="password" placeholder="••••••••" required/>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <label class="remember">
+                <input type="checkbox"/> Remember me
+            </label>
+            <a class="forgot-link" href="/reset-password">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="btn-primary"><span>Sign In →</span></button>
+    </form>
+
+    <div class="divider">or</div>
+
+    <div class="register-link">
+        Don't have an account? <a href="/register">Create one free</a>
+    </div>
+
+    <div class="admin-link">
+        Are you an admin? <a href="/admin/login">Admin Login →</a>
+    </div>
+</div>
+
+</body>
+</html>
