@@ -13,7 +13,7 @@
             --success:#27AE60;--error:#C0392B;--sidebar-w:260px;
         }
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-        body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text-dark);display:flex;min-height:100vh;}
+        body{font-family:'DM Sans',sans-serif;background: transparent;color:var(--text-dark);display:flex;min-height:100vh;}
 
         /* sidebar – identical to list.html */
         .sidebar{width:var(--sidebar-w);background:linear-gradient(175deg,var(--brown-dark),var(--brown-mid));
@@ -106,9 +106,31 @@
 
         @media(max-width:900px){.sidebar{display:none;}.main{margin-left:0;}}
         @media(max-width:680px){.detail-card{grid-template-columns:1fr;}.detail-img{min-height:240px;}.content{padding:20px;}}
+
+        #bg-video {
+            position: fixed;   /* stay full screen always */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+
+            object-fit: cover; /* fill screen nicely */
+            z-index: -1;       /* go behind everything */
+
+            pointer-events: none; /* can't click it */
+        }
+
     </style>
 </head>
 <body>
+
+<video id="bg-video"
+       autoplay
+       muted
+       loop
+       playsinline>
+    <source src="/videos/v2.mp4" type="video/mp4">
+</video>
 
 <!-- SIDEBAR -->
 <aside class="sidebar">
@@ -167,45 +189,301 @@
                 <div th:if="${product.stockLabel == 'Low Stock'}" class="stock-pill low">● Low Stock – hurry!</div>
                 <div th:if="${product.stockLabel == 'Out of Stock'}" class="stock-pill out">● Out of Stock</div>
 
+                <!-- Quantity selector — capped to live stock from DB -->
+                <div th:if="${product.getInStock()}" style="display:flex;align-items:center;gap:12px;margin:16px 0 4px;">
+                    <span style="font-size:.8rem;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:.5px;">Qty</span>
+                    <button type="button" id="btnMinus" onclick="changeQty(-1)"
+                            style="width:32px;height:32px;border-radius:8px;border:1.5px solid var(--cream-dark);
+                               background:var(--cream);cursor:pointer;font-size:18px;display:flex;
+                               align-items:center;justify-content:center;transition:all .2s;"
+                            onmouseover="this.style.background='var(--caramel)';this.style.color='white'"
+                            onmouseout="this.style.background='var(--cream)';this.style.color='inherit'">−</button>
+                    <span id="qtyShow" style="font-weight:600;color:var(--brown-dark);min-width:28px;text-align:center;font-size:1rem;">1</span>
+                    <button type="button" id="btnPlus" onclick="changeQty(1)"
+                            style="width:32px;height:32px;border-radius:8px;border:1.5px solid var(--cream-dark);
+                               background:var(--cream);cursor:pointer;font-size:18px;display:flex;
+                               align-items:center;justify-content:center;transition:all .2s;"
+                            onmouseover="this.style.background='var(--caramel)';this.style.color='white'"
+                            onmouseout="this.style.background='var(--cream)';this.style.color='inherit'">+</button>
+                    <!-- Shows available stock count -->
+                    <span style="font-size:.75rem;color:var(--text-muted);"
+                          th:text="'(' + ${maxStock} + ' available)'"></span>
+                </div>
+                <!-- Warning shown when at stock limit -->
+                <div id="stockWarn" style="display:none;font-size:.75rem;color:#E67E22;margin-bottom:8px;font-weight:500;"></div>
+
                 <!-- Actions -->
                 <div class="detail-actions">
-                    <a th:if="${product.inStock}" href="#" class="btn-order">🛒 Add to Order</a>
-                    <span th:unless="${product.inStock}" class="btn-order disabled">🛒 Unavailable</span>
+                    <!-- Add to Cart form — quantity is controlled by +/- buttons above -->
+                    <form th:if="${product.getInStock()}" method="POST" action="/cart/add" style="display:contents;"
+                          onsubmit="enforceMax(event)">
+                        <input type="hidden" name="productId" th:value="${product.id}"/>
+                        <!-- max attribute prevents browser from submitting > maxStock even via DevTools -->
+                        <input type="number" name="quantity" id="qtyInput"
+                               value="1" min="1" th:max="${maxStock}"
+                               style="display:none;"/>
+                        <button type="submit" class="btn-order">🛒 Add to Cart</button>
+                    </form>
+                    <span th:unless="${product.getInStock()}" class="btn-order disabled">🛒 Unavailable</span>
                     <a href="/products" class="btn-back">← Back</a>
+                </div>
+
+                <!-- Go to cart link (shown always when logged in) -->
+                <div th:if="${product.getInStock()}" style="margin-top:10px;">
+                    <a href="/cart" style="font-size:.82rem;color:var(--caramel);text-decoration:none;">
+                        🛒 View Cart →
+                    </a>
                 </div>
             </div>
         </div>
 
-        <!-- Related / Featured --><div class="related-section" th:if="${featured != null and !#lists.isEmpty(featured)}">
-        <div style="font-family:'Playfair Display',serif; font-size:1.25rem; color:var(--brown-dark);">
-            You might also like
-        </div>
-        <div class="related-grid">
-            <th:block th:each="p : ${featured}">
-                <a th:if="${product != null and p.id != product.id}"
-                   th:href="@{/products/{id}(id=${p.id})}"
-                   class="rel-card"
-                   style="text-decoration:none;">
-
+        <!-- Related / Featured -->
+        <div class="related-section">
+            <div style="font-family:'Playfair Display',serif;font-size:1.25rem;color:var(--brown-dark);">
+                You might also like
+            </div>
+            <div class="related-grid">
+                <a th:each="p : ${featured}"
+                   th:if="${p.id != product.id}"
+                   th:href="'/products/' + ${p.id}"
+                   class="rel-card">
                     <div class="rel-img">
-                        <img th:if="${p.imagePath != null}" th:src="@{'/' + ${p.imagePath}}" th:alt="${p.name}"/>
-                        <span th:unless="${p.imagePath != null}">🍫</span>
+                        <img th:if="${p.imagePath}" th:src="'/' + ${p.imagePath}" th:alt="${p.name}"/>
+                        <span th:unless="${p.imagePath}">🍫</span>
                     </div>
-
                     <div class="rel-body">
                         <div class="rel-name" th:text="${p.name}">Brownie</div>
-                        <div class="rel-price"
-                             th:text="${p.price != null} ? 'Rs. ' + ${#numbers.formatDecimal(p.price, 1, 'COMMA', 2, 'POINT')} : 'Rs. 0.00'">
-                            Rs. 350.00
-                        </div>
+                        <div class="rel-price" th:text="'Rs. ' + ${#numbers.formatDecimal(p.price,1,'COMMA',2,'POINT')}">Rs. 350.00</div>
                     </div>
                 </a>
-            </th:block>
+            </div>
         </div>
-    </div>
 
     </div>
+
+    <!-- ═══════════════════════════════════════════════════
+         SITE FOOTER — Sugar Corner (compact version)
+         Sits inside .main as last child before </div>
+         ═══════════════════════════════════════════════════ -->
+    <footer style="background:linear-gradient(160deg,#2C1810,#1A0D07);
+                   color:rgba(253,246,236,.72);margin-top:auto;padding:0;">
+
+        <!-- Thin wave divider -->
+        <svg viewBox="0 0 1200 30" preserveAspectRatio="none"
+             style="width:100%;display:block;" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#FDF6EC" d="M0,15 C400,30 800,0 1200,15 L1200,0 L0,0 Z"/>
+        </svg>
+
+        <!-- Three-column grid -->
+        <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr;
+                    gap:28px;padding:28px 36px 20px;">
+
+            <!-- Col 1: Brand + contact + socials -->
+            <div>
+                <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px;">
+                    <span style="font-size:22px;">🍫</span>
+                    <span style="font-family:'Playfair Display',serif;font-size:1.05rem;
+                                 color:rgba(253,246,236,.92);">Sugar Corner</span>
+                </div>
+                <p style="font-size:.76rem;color:rgba(253,246,236,.45);
+                           line-height:1.55;margin-bottom:12px;max-width:220px;">
+                    Handcrafted brownies baked with love,<br/>delivered fresh across Sri Lanka.
+                </p>
+                <div style="font-size:.75rem;color:rgba(253,246,236,.5);
+                             display:flex;flex-direction:column;gap:5px;margin-bottom:14px;">
+                    <span>📍 Colombo, Sri Lanka</span>
+                    <span>🕐 Open Daily · 8 AM – 10 PM</span>
+                    <a href="https://tr.ee/3QfscnrEo3" target="_blank" rel="noopener"
+                       style="color:#C68642;text-decoration:none;">💬 Chat on WhatsApp</a>
+                </div>
+
+                <!-- Social buttons — compact, emoji icons like the image -->
+                <div style="display:flex;gap:7px;">
+
+                    <!-- Facebook -->
+                    <a href="https://l.instagram.com/?u=https%3A%2F%2Fwww.facebook.com%2Fshare%2F15f8FQiHcz%2F%3Fmibextid%3DwwXIfr%26utm_source%3Dig%26utm_medium%3Dsocial%26utm_content%3Dlink_in_bio&e=AT4vmwXYZZWGdPX_iamw5cjUrYDXQUB7h0p38flWq4J9suFa2vFoBTFciroc8w-ya-MskS5VuxhSBlF8ud_tHYKaqVYwcnuX8MzeioFnjokPmqxs9QPofn4Lqw"
+                       target="_blank" rel="noopener" title="Facebook"
+                       style="width:34px;height:34px;border-radius:9px;display:flex;
+                              align-items:center;justify-content:center;
+                              background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+                              text-decoration:none;transition:all .2s;"
+                       onmouseover="this.style.background='rgba(66,103,178,.35)';this.style.transform='translateY(-2px)'"
+                       onmouseout="this.style.background='rgba(255,255,255,.07)';this.style.transform='none'">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="#7B9EE8">
+                            <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+                        </svg>
+                    </a>
+
+                    <!-- Instagram -->
+                    <a href="https://tr.ee/-6CBrcau-M" target="_blank" rel="noopener" title="Instagram"
+                       style="width:34px;height:34px;border-radius:9px;display:flex;
+                              align-items:center;justify-content:center;
+                              background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+                              text-decoration:none;transition:all .2s;"
+                       onmouseover="this.style.background='rgba(193,53,132,.35)';this.style.transform='translateY(-2px)'"
+                       onmouseout="this.style.background='rgba(255,255,255,.07)';this.style.transform='none'">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                             stroke="#E870B0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                            <circle cx="12" cy="12" r="4"/>
+                            <circle cx="17.5" cy="6.5" r="1.2" fill="#E870B0" stroke="none"/>
+                        </svg>
+                    </a>
+
+                    <!-- TikTok -->
+                    <a href="https://tr.ee/1sfpiJhMAt" target="_blank" rel="noopener" title="TikTok"
+                       style="width:34px;height:34px;border-radius:9px;display:flex;
+                              align-items:center;justify-content:center;
+                              background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+                              text-decoration:none;transition:all .2s;"
+                       onmouseover="this.style.background='rgba(255,255,255,.15)';this.style.transform='translateY(-2px)'"
+                       onmouseout="this.style.background='rgba(255,255,255,.07)';this.style.transform='none'">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="rgba(253,246,236,.85)">
+                            <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.79 1.53V6.77a4.85 4.85 0 0 1-1.02-.08z"/>
+                        </svg>
+                    </a>
+
+                    <!-- WhatsApp -->
+                    <a href="https://tr.ee/3QfscnrEo3" target="_blank" rel="noopener" title="WhatsApp"
+                       style="width:34px;height:34px;border-radius:9px;display:flex;
+                              align-items:center;justify-content:center;
+                              background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+                              text-decoration:none;transition:all .2s;"
+                       onmouseover="this.style.background='rgba(37,211,102,.25)';this.style.transform='translateY(-2px)'"
+                       onmouseout="this.style.background='rgba(255,255,255,.07)';this.style.transform='none'">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="#5CE89A">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
+                        </svg>
+                    </a>
+
+                </div>
+            </div>
+
+            <!-- Col 2: Shop Hours -->
+            <div>
+                <div style="font-family:'Playfair Display',serif;font-size:.82rem;
+                            color:rgba(253,246,236,.85);margin-bottom:12px;
+                            padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.07);">
+                    Shop Hours
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px;font-size:.75rem;">
+                    <div style="display:flex;justify-content:space-between;">
+                        <span style="color:rgba(253,246,236,.45);">Mon – Fri</span>
+                        <span style="color:#27AE60;font-weight:500;">8 AM – 9 PM</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;">
+                        <span style="color:rgba(253,246,236,.45);">Saturday</span>
+                        <span style="color:#27AE60;font-weight:500;">9 AM – 10 PM</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;">
+                        <span style="color:rgba(253,246,236,.45);">Sunday</span>
+                        <span style="color:#E67E22;font-weight:500;">10 AM – 8 PM</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;">
+                        <span style="color:rgba(253,246,236,.45);">Holidays</span>
+                        <span style="color:#E67E22;font-weight:500;">11 AM – 6 PM</span>
+                    </div>
+                </div>
+                <div style="margin-top:12px;padding:8px 10px;
+                            background:rgba(198,134,66,.1);border-radius:8px;
+                            border:1px solid rgba(198,134,66,.18);
+                            font-size:.72rem;color:rgba(253,246,236,.55);line-height:1.5;">
+                    🚚 <strong style="color:rgba(253,246,236,.75);">Free delivery</strong>
+                    within Colombo for orders above Rs.&nbsp;500
+                </div>
+            </div>
+
+            <!-- Col 3: About -->
+            <div>
+                <div style="font-family:'Playfair Display',serif;font-size:.82rem;
+                            color:rgba(253,246,236,.85);margin-bottom:12px;
+                            padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.07);">
+                    About Us
+                </div>
+                <p style="font-size:.75rem;color:rgba(253,246,236,.45);
+                           line-height:1.6;margin-bottom:10px;">
+                    A home-based brownie shop in Colombo using premium Belgian chocolate
+                    and the finest local ingredients. Every brownie is made to order.
+                </p>
+                <p style="font-size:.75rem;color:rgba(253,246,236,.45);line-height:1.6;">
+                    Custom orders &amp; gift boxes available — message us on WhatsApp!
+                </p>
+                <div style="margin-top:12px;display:flex;align-items:center;gap:6px;">
+                    <span style="color:#F4C430;font-size:.82rem;letter-spacing:2px;">★★★★★</span>
+                    <span style="font-size:.7rem;color:rgba(253,246,236,.35);">Loved by customers</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Bottom bar -->
+        <div style="border-top:1px solid rgba(255,255,255,.06);
+                    padding:10px 36px;
+                    display:flex;align-items:center;justify-content:space-between;
+                    flex-wrap:wrap;gap:8px;">
+            <p style="font-size:.7rem;color:rgba(253,246,236,.3);">
+                © 2025 Sugar Corner · Made with ❤️ in Sri Lanka
+            </p>
+            <a href="/contact"
+               style="font-size:.7rem;color:rgba(253,246,236,.3);text-decoration:none;"
+               onmouseover="this.style.color='#C68642'"
+               onmouseout="this.style.color='rgba(253,246,236,.3)'">Contact Us</a>
+        </div>
+
+    </footer>
+
 </div>
 
+<script th:inline="javascript">
+    // MAX_STOCK is set by ProductController from live DB value — never a guess
+    const MAX_STOCK = /*[[${maxStock}]]*/ 1;
+    let qty = 1;
+
+    function changeQty(delta) {
+        qty = Math.max(1, Math.min(MAX_STOCK, qty + delta));
+
+        // Update display and hidden input
+        var show    = document.getElementById('qtyShow');
+        var input   = document.getElementById('qtyInput');
+        var minus   = document.getElementById('btnMinus');
+        var plus    = document.getElementById('btnPlus');
+        var warn    = document.getElementById('stockWarn');
+
+        if (show)  show.textContent = qty;
+        if (input) input.value      = qty;
+
+        // Disable buttons at boundaries
+        if (minus) minus.disabled = (qty <= 1);
+        if (plus)  plus.disabled  = (qty >= MAX_STOCK);
+
+        // Show warning when at stock limit
+        if (warn) {
+            if (qty >= MAX_STOCK) {
+                warn.textContent   = '⚠ Maximum available: ' + MAX_STOCK;
+                warn.style.display = 'block';
+            } else {
+                warn.style.display = 'none';
+            }
+        }
+    }
+
+    // Hard block on form submit — prevents DevTools tampering
+    function enforceMax(e) {
+        var input = document.getElementById('qtyInput');
+        if (!input) return;
+        var val = parseInt(input.value) || 1;
+        if (val > MAX_STOCK) {
+            input.value = MAX_STOCK;
+        }
+        if (val < 1) {
+            input.value = 1;
+        }
+    }
+
+    // Initialise on page load — sets correct button states
+    document.addEventListener('DOMContentLoaded', function() {
+        changeQty(0);
+    });
+</script>
 </body>
 </html>

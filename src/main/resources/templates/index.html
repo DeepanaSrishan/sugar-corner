@@ -1,40 +1,466 @@
 <!DOCTYPE html>
+<!--
+  ================================================================
+  FILE:  index.html
+  PLACE: src/main/resources/templates/index.html
+
+  UPDATED: Paragraph color made easy to change
+  ================================================================
+-->
 <html lang="en">
 <head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sugar Corner – Artisan Brownie Shop</title>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+
     <style>
-        :root{--brown-dark:#2C1810;--brown-mid:#5C3317;--brown-warm:#8B4513;--caramel:#C68642;--cream:#FDF6EC;--white:#FFFEF9;}
-        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-        body{font-family:'DM Sans',sans-serif;background:var(--cream);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 20px;}
-        .hero{max-width:600px;animation:fadeUp .8s ease both;}
-        @keyframes fadeUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
-        .logo{font-size:80px;display:block;margin-bottom:20px;animation:bounceIn 1s ease both .3s;}
-        @keyframes bounceIn{0%{transform:scale(0);opacity:0;}60%{transform:scale(1.1);}100%{transform:scale(1);opacity:1;}}
-        h1{font-family:'Playfair Display',serif;font-size:3rem;color:var(--brown-dark);line-height:1.1;margin-bottom:10px;}
-        h1 em{font-style:italic;color:var(--caramel);}
-        p{color:var(--brown-mid);font-size:1.05rem;font-weight:300;margin-bottom:40px;line-height:1.6;}
-        .btn-row{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;}
-        .btn{padding:14px 36px;border-radius:12px;font-family:inherit;font-size:.95rem;font-weight:500;text-decoration:none;transition:all .25s;cursor:pointer;border:none;}
-        .btn-primary{background:linear-gradient(135deg,var(--brown-warm),var(--brown-mid));color:var(--cream);}
-        .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(92,51,23,.35);}
-        .btn-outline{background:transparent;border:2px solid var(--caramel);color:var(--brown-warm);}
-        .btn-outline:hover{background:var(--caramel);color:var(--white);}
-        .tagline{margin-top:40px;font-size:.8rem;letter-spacing:2px;text-transform:uppercase;color:var(--caramel);}
+        :root {
+            --brown-dark: #2C1810;
+            --brown-mid: #5C3317;
+            --brown-warm: #8b4513;
+            --caramel: #c68642;
+            --cream: #FDF6EC;
+            --text-light: rgba(253, 246, 236, 0.92);   /* ← This controls the paragraph color */
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--brown-dark);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px 20px;
+            position: relative;
+            overflow: hidden;
+            perspective: 1600px;
+        }
+
+        #bg-video {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -3;
+            pointer-events: none;
+            filter: brightness(0.62) saturate(1.2) contrast(1.08);
+        }
+        @media (max-width: 768px) {
+            #bg-video {
+                object-fit: cover;
+                filter: brightness(0.55) saturate(1.15);   /* mobile වල ටිකක් අඳුරු කරන්න */
+            }
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 50% 40%, rgba(20,8,4,0.5) 0%, rgba(8,3,1,0.85) 100%);
+            z-index: -2;
+        }
+
+        .depth-glow, .depth-layer {
+            position: fixed; inset: 0; z-index: -1; pointer-events: none;
+        }
+        .depth-glow {
+            background: radial-gradient(ellipse at 32% 38%, rgba(198,134,66,0.16) 0%, transparent 70%);
+        }
+        .depth-layer {
+            background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(198,134,66,0.09) 0%, transparent 60%);
+        }
+
+        #brownie-container {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        /* ============== REALISTIC BROWNIE ============== */
+        .brownie-piece {
+            position: absolute;
+            width: 72px; height: 72px;
+            border-radius: 16px 15px 8px 17px;
+            background: radial-gradient(ellipse at 26% 22%, #b87a55 8%, #4a2a12 48%, #2c1709 92%);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.65),
+            inset 0 6px 14px rgba(255,230,170,0.4),
+            inset 0 -10px 18px rgba(30,15,8,0.85);
+            cursor: grab;
+            pointer-events: auto;
+            user-select: none;
+            transform-style: preserve-3d;
+            border: 2px solid rgba(110,55,28,0.6);
+            filter: drop-shadow(4px 10px 18px rgba(0,0,0,0.7));
+        }
+
+        .brownie-piece .glaze {
+            position: absolute;
+            top: 7%; left: 11%;
+            width: 52%; height: 28%;
+            background: radial-gradient(ellipse at 48% 35%, rgba(255,245,180,0.55), rgba(255,190,90,0.15) 65%, transparent 85%);
+            border-radius: 60% 40% 70% 30%;
+            transform: rotate(-22deg);
+            pointer-events: none;
+            box-shadow: inset 0 4px 10px rgba(255,255,255,0.35);
+        }
+
+        .brownie-piece::before, .brownie-piece::after {
+            content: '';
+            position: absolute;
+            background: radial-gradient(circle at 40% 35%, #1f1208, #0a0502);
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.6);
+        }
+        .brownie-piece::before {
+            top: 18%; left: 19%; width: 14px; height: 13px;
+            box-shadow: 21px 16px 0 1px #1c0f07, -11px 24px 0 2px #1f1309, 14px 33px 0 1px #25160b;
+        }
+        .brownie-piece::after {
+            bottom: 22%; right: 21%; width: 12px; height: 12px;
+            box-shadow: -17px -13px 0 2px #1a0e06, 19px -8px 0 1px #2a1a0d;
+        }
+
+        .brownie-piece:active { cursor: grabbing; }
+
+        .brownie-piece.sliced {
+            animation: realisticSlice 0.75s cubic-bezier(0.25,0.05,0.3,1) forwards;
+            pointer-events: none;
+        }
+
+        @keyframes realisticSlice {
+            0%   { transform: scale(1) rotate(0deg) translateY(0); filter: brightness(1); opacity: 1; }
+            30%  { transform: scale(1.38) rotate(42deg) translateY(-75px); filter: brightness(1.25) saturate(1.4); }
+            65%  { transform: scale(0.82) rotate(85deg) translateY(-135px); opacity: 0.75; }
+            100% { transform: scale(0.05) rotate(135deg) translateY(-260px); opacity: 0; }
+        }
+
+        .brownie-piece.respawning {
+            animation: respawnPop 0.9s cubic-bezier(0.175, 0.885, 0.32, 1.4) forwards;
+        }
+
+        @keyframes respawnPop {
+            0%   { transform: scale(0.15) rotate(-55deg) translateY(90px); opacity: 0; }
+            55%  { transform: scale(1.18) rotate(15deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+
+        /* ============== LOOSE CHOCOLATE CHUNKS ============== */
+        .choco-chunk {
+            position: absolute;
+            width: 26px; height: 26px;
+            background: linear-gradient(135deg, #3c2412, #1f1309);
+            border-radius: 4px 9px 5px 11px;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.5),
+            inset 0 3px 6px rgba(255,210,120,0.25);
+            pointer-events: auto;
+            cursor: grab;
+            transform-style: preserve-3d;
+            z-index: 2;
+        }
+
+        .choco-chunk::before {
+            content: '';
+            position: absolute;
+            inset: 15%;
+            background: radial-gradient(circle, rgba(255,230,160,0.25), transparent);
+            border-radius: inherit;
+        }
+
+        .choco-chunk.sliced {
+            animation: chocoBreak 0.55s ease forwards;
+        }
+
+        @keyframes chocoBreak {
+            to { transform: scale(0.3) rotate(120deg) translateY(-120px); opacity: 0; }
+        }
+
+        /* Hero Content */
+        .hero {
+            position: relative; z-index: 3;
+            max-width: 600px;
+            background: rgba(20,8,4,0.4);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(198,134,66,0.28);
+            border-radius: 32px;
+            padding: 58px 50px 46px;
+            box-shadow: 0 28px 75px rgba(0,0,0,0.6);
+        }
+
+        .logo { font-size: 86px; margin-bottom: 24px; }
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.2rem;
+            color: var(--cream);
+        }
+        h1 em { color: var(--caramel); }
+
+        /* ← THIS IS THE COLOR YOU WANT TO CHANGE */
+        p {
+            color: var(--text-light);           /* Change this line */
+            font-size: 1.07rem;
+            font-weight: 300;
+            line-height: 1.65;
+            margin-bottom: 30px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 30px;
+        }
+        .btn {
+            padding: 16px 40px;
+            border-radius: 50px;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.23,1,0.32,1);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #8b4513, #5C3317);
+            color: white;
+            border: 1px solid #c68642;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #c68642;
+            color: #c68642;
+        }
+
+        /* Mobile සඳහා විශේෂ CSS */
+        @media (max-width: 768px) {
+            body {
+                padding: 20px 15px;
+            }
+
+            .hero {
+                padding: 40px 25px 35px;
+                max-width: 100%;
+                border-radius: 24px;
+            }
+
+            h1 {
+                font-size: 2.4rem;   /* ලොකු අකුරු අඩු කරන්න */
+            }
+
+            p {
+                font-size: 1rem;
+                line-height: 1.6;
+            }
+
+            .btn-row {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .btn {
+                padding: 15px 30px;
+                font-size: 1.05rem;
+                width: 100%;   /* බොත්තම් පුළුල් වෙන්න */
+            }
+
+            .logo {
+                font-size: 68px;
+            }
+        }
+
+        /* තවත් කුඩා screens සඳහා (iPhone වගේ) */
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 2.1rem;
+            }
+
+            .brownie-piece {
+                width: 55px !important;
+                height: 55px !important;
+            }
+        }
     </style>
 </head>
 <body>
-<div class="hero">
+
+<video id="bg-video"
+       src="/videos/bg-video.mp4"
+       autoplay
+       muted
+       loop
+       playsinline
+       preload="metadata">
+</video>
+
+<div class="depth-glow" id="depthGlow"></div>
+<div class="depth-layer" id="depthLayer"></div>
+
+<div id="brownie-container"></div>
+
+<div class="hero" id="heroCard">
     <span class="logo">🍫</span>
     <h1>Welcome to <em>Sugar Corner</em></h1>
-    <p>Handcrafted brownies baked with love. Order online, pick up fresh, or get them delivered right to your door.</p>
+    <p>Handcrafted brownies baked with love. Order online, pick up fresh,<br>or get them delivered right to your door.</p>
     <div class="btn-row">
-        <a href="/login"    class="btn btn-primary">Customer Login</a>
+        <a href="/login" class="btn btn-primary">Customer Login</a>
         <a href="/register" class="btn btn-outline">Create Account</a>
     </div>
-    <div class="tagline">✦ Admin access: <a href="/admin/login" style="color:inherit;">Admin Login</a> ✦</div>
 </div>
+
+<script>
+    // (Script remains the same - no changes needed)
+    (function() {
+        "use strict";
+
+        const container = document.getElementById('brownie-container');
+        const video = document.getElementById('bg-video');
+        const hero = document.getElementById('heroCard');
+        const glow = document.getElementById('depthGlow');
+        const layer = document.getElementById('depthLayer');
+
+        let mouseX = 0, mouseY = 0;
+        let targetRotX = 0, targetRotY = 0;
+        let currentRotX = 0, currentRotY = 0;
+
+        function update3D(e) {
+            const x = (e.clientX / window.innerWidth) * 2 - 1;
+            const y = (e.clientY / window.innerHeight) * 2 - 1;
+            mouseX = x; mouseY = y;
+            targetRotX = -y * 4.5;
+            targetRotY = x * 4.5;
+
+            layer.style.setProperty('--mouse-x', (x*0.5 + 0.5)*100 + '%');
+            layer.style.setProperty('--mouse-y', (y*0.5 + 0.5)*100 + '%');
+        }
+
+        window.addEventListener('mousemove', update3D);
+        window.addEventListener('touchmove', e => e.touches.length && update3D(e.touches[0]));
+
+        function animate3D() {
+            currentRotX += (targetRotX - currentRotX) * 0.09;
+            currentRotY += (targetRotY - currentRotY) * 0.09;
+
+            video.style.transform = `rotateX(${currentRotX*0.4}deg) rotateY(${currentRotY*0.4}deg) translate(${mouseX*11}px, ${mouseY*8}px) scale(1.1)`;
+            hero.style.transform = `rotateX(${currentRotX*0.6}deg) rotateY(${currentRotY*0.6}deg) translateZ(50px)`;
+            glow.style.transform = `translate(${mouseX*18}px, ${mouseY*15}px)`;
+
+            requestAnimationFrame(animate3D);
+        }
+        animate3D();
+
+        function createBrownie(respawn = false) {
+            const el = document.createElement('div');
+            el.className = 'brownie-piece';
+            const glaze = document.createElement('div');
+            glaze.className = 'glaze';
+            el.appendChild(glaze);
+
+            const size = (window.innerWidth < 600) ?
+                (45 + Math.random() * 25) :
+                (62 + Math.random() * 32);
+
+            let x = Math.random() * 88 + 6;
+            let y = Math.random() * 88 + 6;
+            while (x > 28 && x < 72 && y > 25 && y < 75) {
+                x = Math.random() * 88 + 6; y = Math.random() * 88 + 6;
+            }
+            el.style.left = x + '%';
+            el.style.top = y + '%';
+
+            const rot = Math.random() * 340;
+            el.style.transform = `rotate(${rot}deg)`;
+
+            // Drag & Click logic (same as before)
+            let dragging = false;
+            const startDrag = () => { dragging = true; el.style.transition = 'none'; el.style.zIndex = 20; };
+            const moveDrag = (e) => {
+                if (!dragging) return;
+                const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+                const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+                const rect = container.getBoundingClientRect();
+                el.style.left = Math.max(3, Math.min(95, ((clientX - rect.left) / rect.width) * 100)) + '%';
+                el.style.top = Math.max(3, Math.min(95, ((clientY - rect.top) / rect.height) * 100)) + '%';
+            };
+            const endDrag = () => { dragging = false; el.style.transition = 'transform 0.25s'; el.style.zIndex = 1; };
+
+            el.addEventListener('mousedown', startDrag);
+            el.addEventListener('touchstart', startDrag, {passive:true});
+            window.addEventListener('mousemove', moveDrag);
+            window.addEventListener('touchmove', moveDrag, {passive:true});
+            window.addEventListener('mouseup', endDrag);
+            window.addEventListener('touchend', endDrag);
+
+            el.addEventListener('click', (e) => {
+                if (dragging) return;
+                e.stopPropagation();
+                if (!el.classList.contains('sliced')) {
+                    el.classList.add('sliced');
+                    setTimeout(() => { el.remove(); setTimeout(() => createBrownie(true), 400); }, 780);
+                }
+            });
+
+            container.appendChild(el);
+            if (respawn) el.classList.add('respawning');
+        }
+
+        function createChocoChunk() {
+            const el = document.createElement('div');
+            el.className = 'choco-chunk';
+            const size = 22 + Math.random() * 14;
+            el.style.width = size + 'px';
+            el.style.height = size + 'px';
+            el.style.left = (Math.random() * 90 + 5) + '%';
+            el.style.top = (Math.random() * 85 + 8) + '%';
+            el.style.transform = `rotate(${Math.random() * 360}deg)`;
+
+            let dragging = false;
+            el.addEventListener('mousedown', () => dragging = true);
+            el.addEventListener('touchstart', () => dragging = true);
+            window.addEventListener('mousemove', e => {
+                if (!dragging) return;
+                el.style.left = (e.clientX / window.innerWidth * 100 - 5) + '%';
+                el.style.top = (e.clientY / window.innerHeight * 100 - 5) + '%';
+            });
+            window.addEventListener('mouseup', () => dragging = false);
+            window.addEventListener('touchend', () => dragging = false);
+
+            el.addEventListener('click', () => {
+                if (dragging) return;
+                el.classList.add('sliced');
+                setTimeout(() => el.remove(), 600);
+            });
+
+            container.appendChild(el);
+        }
+
+        for (let i = 0; i < 15; i++) createBrownie(
+
+        );
+        for (let i = 0; i < 22; i++) createChocoChunk();
+
+        let t = 0;
+        function floatLoop() {
+            t += 0.018;
+            document.querySelectorAll('.brownie-piece:not(.sliced)').forEach((el, i) => {
+                const sway = Math.sin(t * 0.8 + i) * 2.5;
+                el.style.transform = `rotate(${parseFloat(el.style.transform.match(/-?\d+\.?\d*/)[0]) + sway}deg)`;
+            });
+            requestAnimationFrame(floatLoop);
+        }
+        floatLoop();
+
+        setInterval(() => {
+            if (document.querySelectorAll('.brownie-piece').length < 12) createBrownie(true);
+            if (document.querySelectorAll('.choco-chunk').length < 15) createChocoChunk();
+        }, 4500);
+    })();
+</script>
 </body>
 </html>

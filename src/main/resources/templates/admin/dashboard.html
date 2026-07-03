@@ -14,7 +14,7 @@
             --border: rgba(255,255,255,.07);
         }
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'DM Sans', sans-serif; background: #0f0f0f; color: #e8e0d8; display: flex; min-height: 100vh; }
+        body { font-family: 'DM Sans', sans-serif; background: transparent;; color: #e8e0d8; display: flex; min-height: 100vh; }
 
         /* ── Admin Sidebar ── */
         .sidebar {
@@ -130,9 +130,32 @@
         @media (max-width:1100px) { .stats-row{grid-template-columns:repeat(2,1fr);} .section-row{grid-template-columns:1fr;} }
         @media (max-width:900px)  { .sidebar{display:none;} .main{margin-left:0;} }
         @media (max-width:580px)  { .stats-row{grid-template-columns:1fr;} .content{padding:20px;} }
+
+        #bg-video {
+            position: fixed;   /* stay full screen always */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+
+            object-fit: cover;
+            /* fill screen nicely */
+            z-index: -1;       /* go behind everything */
+
+            pointer-events: none; /* can't click it */
+        }
+
     </style>
 </head>
 <body>
+
+<video id="bg-video"
+       autoplay
+       muted
+       loop
+       playsinline>
+    <source src="/videos/v6.mp4" type="video/mp4">
+</video>
 
 <!-- SIDEBAR -->
 <aside class="sidebar">
@@ -151,21 +174,30 @@
     </div>
 
     <nav>
-        <div class="nav-section">Overview</div>
+
         <a class="nav-item active" href="/admin/dashboard"><span class="nav-icon">📊</span> Dashboard</a>
 
-        <div class="nav-section">Customer Mgmt</div>
+
         <a class="nav-item" href="/admin/customers"><span class="nav-icon">👥</span> All Customers</a>
 
-        <div class="nav-section">Product Mgmt</div>
+
         <a class="nav-item" href="/admin/products"><span class="nav-icon">🍫</span> All Products</a>
         <a class="nav-item" href="/admin/products/add"><span class="nav-icon">➕</span> Add Product</a>
 
-        <div class="nav-section">Coming Soon</div>
-        <a class="nav-item" href="#"><span class="nav-icon">📦</span> Orders <span class="nav-badge">0</span></a>
-        <a class="nav-item" href="#"><span class="nav-icon">💳</span> Payments</a>
-        <a class="nav-item" href="#"><span class="nav-icon">💬</span> Inquiries</a>
-        <a class="nav-item" href="#"><span class="nav-icon">⭐</span> Feedback</a>
+
+        <a class="nav-item" href="/admin/orders"><span class="nav-icon">📦</span> All Orders
+            <span class="nav-badge" th:if="${notifCount > 0}" th:text="${notifCount}">0</span>
+        </a>
+
+
+        <a class="nav-item" href="/admin/payments"><span class="nav-icon">💳</span> All Payments</a>
+
+
+        <a class="nav-item" href="/admin/contact/inquiries">
+            <span class="nav-icon">💬</span> Inquiries
+            <span class="nav-badge" th:if="${notifCount > 0}" th:text="${notifCount}">0</span>
+        </a>
+        <a class="nav-item" href="/admin/contact/feedback"><span class="nav-icon">⭐</span> Feedback</a>
     </nav>
 
     <div class="sidebar-footer">
@@ -179,7 +211,165 @@
         <h1>Dashboard Overview</h1>
         <div class="topbar-right">
             <span class="topbar-time" id="clock">–</span>
-            <div class="notif-btn">🔔</div>
+            <!-- ═══════════════════════════════════════════════════════
+     NOTIFICATION BELL v2
+     Uses: notifCount (int), newOrdersList (List<Order>)
+
+     FIX: notifCount = orders ABOVE the "mark-read" watermark,
+     not total pending. Navigating away and back keeps badge = 0
+     until a genuinely NEW order arrives (higher ID than watermark).
+     ═══════════════════════════════════════════════════════ -->
+            <div style="position:relative;display:inline-block;" id="notifWrap">
+
+                <!-- Bell button -->
+                <button id="notifBell"
+                        onclick="toggleNotifPanel(event)"
+                        style="width:40px;height:40px;border-radius:11px;border:none;cursor:pointer;
+                   background:rgba(196,134,66,.15);font-size:18px;display:flex;
+                   align-items:center;justify-content:center;position:relative;
+                   transition:background .2s;"
+                        onmouseover="this.style.background='rgba(196,134,66,.3)'"
+                        onmouseout="this.style.background='rgba(196,134,66,.15)'">
+                    🔔
+                    <!-- Red badge — only visible when notifCount > 0 -->
+                    <span id="notifBadge"
+                          th:if="${notifCount != null and notifCount > 0}"
+                          th:text="${notifCount}"
+                          style="position:absolute;top:-5px;right:-5px;min-width:19px;height:19px;
+                     border-radius:100px;background:#FF4757;color:#fff;font-size:.62rem;
+                     font-weight:700;display:flex;align-items:center;justify-content:center;
+                     padding:0 4px;border:2px solid #1a1a1a;pointer-events:none;">0</span>
+                </button>
+
+                <!-- Dropdown panel -->
+                <div id="notifPanel"
+                     style="display:none;position:absolute;top:50px;right:0;width:340px;
+                background:#1a1a1a;border-radius:16px;border:1px solid rgba(255,255,255,.1);
+                box-shadow:0 20px 60px rgba(0,0,0,.5);z-index:500;overflow:hidden;">
+
+                    <!-- Header -->
+                    <div style="padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.08);
+                    display:flex;align-items:center;justify-content:space-between;">
+                        <div>
+                            <span style="color:#FDF6EC;font-size:.9rem;font-weight:600;">🔔 New Orders</span>
+                            <span id="panelCount"
+                                  style="font-size:.75rem;color:#FF8A80;margin-left:6px;"
+                                  th:text="${notifCount > 0} ? '(' + ${notifCount} + ' new)' : '(all read)'">
+                      (0 new)
+                </span>
+                        </div>
+                        <button onclick="markAllRead()"
+                                style="padding:5px 12px;background:rgba(255,255,255,.08);
+                           border:1px solid rgba(255,255,255,.12);border-radius:8px;
+                           color:rgba(253,246,236,.7);font-size:.73rem;cursor:pointer;
+                           transition:all .2s;font-family:inherit;"
+                                onmouseover="this.style.background='rgba(39,174,96,.2)';this.style.color='#51CF66'"
+                                onmouseout="this.style.background='rgba(255,255,255,.08)';this.style.color='rgba(253,246,236,.7)'">
+                            ✅ Mark all read
+                        </button>
+                    </div>
+
+                    <!-- Order rows — only NEW orders (above watermark) -->
+                    <div style="max-height:320px;overflow-y:auto;" id="notifList">
+
+                        <!-- All caught up -->
+                        <div
+                                style="padding:28px;text-align:center;color:rgba(253,246,236,.4);font-size:.83rem;">
+                            ✅ No new orders
+                        </div>
+
+                        <!-- One row per new order -->
+                        <div th:each="o,i : ${newOrdersList}"
+                             style="padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.05);
+                        display:flex;align-items:center;justify-content:space-between;gap:12px;
+                        transition:background .15s;cursor:pointer;"
+                             th:onclick="'window.location=\'/admin/orders/' + ${o.id} + '\''"
+                             onmouseover="this.style.background='rgba(255,255,255,.05)'"
+                             onmouseout="this.style.background='transparent'">
+
+                            <div style="flex:1;min-width:0;">
+                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+                        <span style="font-size:.78rem;font-weight:700;color:#FFA94D;">
+                            #<span th:text="${o.id}">1</span>
+                        </span>
+                                    <span style="font-size:.75rem;color:rgba(253,246,236,.7);
+                                     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
+                                          th:text="${o.customerFullName}">Customer</span>
+                                </div>
+                                <div style="font-size:.7rem;color:rgba(253,246,236,.38);"
+                                     th:text="${o.createdAt != null ?
+                             #temporals.format(o.createdAt,'dd MMM yyyy · hh:mm a') : '–'}">
+                                    01 Jan · 10:30 AM
+                                </div>
+                            </div>
+
+                            <div style="text-align:right;flex-shrink:0;">
+                                <div style="font-size:.82rem;font-weight:600;color:#FDF6EC;"
+                                     th:text="'Rs. ' + ${#numbers.formatDecimal(o.totalAmount,1,'COMMA',0,'POINT')}">
+                                    Rs. 0
+                                </div>
+                                <span style="font-size:.65rem;padding:2px 8px;border-radius:100px;
+                                 background:rgba(255,169,77,.18);color:#FFA94D;font-weight:600;">
+                        NEW
+                    </span>
+                            </div>
+                        </div>
+
+                    </div><!-- /notifList -->
+
+                    <!-- Footer -->
+                    <div style="padding:10px 18px;border-top:1px solid rgba(255,255,255,.06);text-align:center;">
+                        <a href="/admin/orders"
+                           style="font-size:.78rem;color:#C68642;text-decoration:none;font-weight:500;">
+                            View all orders →
+                        </a>
+                    </div>
+
+                </div><!-- /notifPanel -->
+            </div><!-- /notifWrap -->
+
+            <script>
+                function toggleNotifPanel(e) {
+                    e.stopPropagation();
+                    var panel = document.getElementById('notifPanel');
+                    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+                }
+
+                document.addEventListener('click', function(e) {
+                    var wrap  = document.getElementById('notifWrap');
+                    var panel = document.getElementById('notifPanel');
+                    if (wrap && panel && !wrap.contains(e.target)) {
+                        panel.style.display = 'none';
+                    }
+                });
+
+                function markAllRead() {
+                    fetch('/admin/orders/notifications/mark-read', { method: 'POST' })
+                        .then(function() {
+                            /* Hide badge — it stays hidden on next page load because
+                               server now stores the current max order ID as watermark.
+                               Only a brand-new order (higher ID) will make it reappear. */
+                            var badge = document.getElementById('notifBadge');
+                            if (badge) badge.style.display = 'none';
+
+                            var count = document.getElementById('panelCount');
+                            if (count) count.textContent = '(all read)';
+
+                            var list = document.getElementById('notifList');
+                            if (list) {
+                                list.innerHTML = '<div style="padding:28px;text-align:center;' +
+                                    'color:rgba(253,246,236,.4);font-size:.83rem;">✅ All caught up!</div>';
+                            }
+
+                            setTimeout(function() {
+                                var panel = document.getElementById('notifPanel');
+                                if (panel) panel.style.display = 'none';
+                            }, 700);
+                        })
+                        .catch(function(err) { console.error('markAllRead error:', err); });
+                }
+            </script>
+
         </div>
     </div>
 
@@ -192,22 +382,22 @@
                 <div class="stat-num" th:text="${totalCustomers}">0</div>
                 <div class="stat-change up">Module 1 Active ✓</div>
             </div>
-            <div class="stat-card" data-emoji="✅">
-                <div class="stat-label">Active Accounts</div>
-                <div class="stat-num" th:text="${activeCustomers}">0</div>
-                <div class="stat-change up">↑ All good</div>
-            </div>
-            <div class="stat-card" data-emoji="🚫">
-                <div class="stat-label">Blocked Accounts</div>
-                <div class="stat-num" th:text="${blockedCustomers}">0</div>
-                <div class="stat-change" th:classappend="${blockedCustomers > 0} ? 'down' : 'up'">
-                    <span th:text="${blockedCustomers > 0} ? '⚠ Needs attention' : '✓ None blocked'">✓ None blocked</span>
-                </div>
-            </div>
             <div class="stat-card" data-emoji="🍫">
                 <div class="stat-label">Total Products</div>
                 <div class="stat-num" th:text="${totalProducts}">0</div>
                 <div class="stat-change up">Module 2 Active ✓</div>
+            </div>
+            <div class="stat-card" data-emoji="📦">
+                <div class="stat-label">Total Orders</div>
+                <div class="stat-num" th:text="${totalOrders}">0</div>
+                <div class="stat-change up">Module 3 Active ✓</div>
+            </div>
+            <div class="stat-card" data-emoji="⏳">
+                <div class="stat-label">Pending Orders</div>
+                <div class="stat-num" th:text="${pendingOrders}">0</div>
+                <div class="stat-change"
+                     th:classappend="${pendingOrders > 0} ? 'down' : 'up'"
+                     th:text="${pendingOrders > 0} ? '⚠ Needs attention' : '✓ All clear'">All clear</div>
             </div>
         </div>
 
@@ -230,11 +420,11 @@
                             <div class="action-sub">Add a new brownie to shop</div>
                         </div>
                     </a>
-                    <a class="action-btn" href="#">
+                    <a class="action-btn" href="/admin/orders">
                         <span class="action-emoji">📦</span>
                         <div>
                             <div class="action-label">View Orders</div>
-                            <div class="action-sub">Coming in Module 3</div>
+                            <div class="action-sub" th:text="${pendingOrders + ' pending'}">0 pending</div>
                         </div>
                     </a>
                     <a class="action-btn" href="#">
@@ -260,16 +450,16 @@
                         <span class="summary-val" th:text="${activeCustomers}">0</span>
                     </li>
                     <li class="summary-item">
-                        <span class="summary-label">Blocked Accounts</span>
-                        <span class="summary-val" th:text="${blockedCustomers}">0</span>
+                        <span class="summary-label">Total Products</span>
+                        <span class="summary-val" th:text="${totalProducts}">0</span>
                     </li>
                     <li class="summary-item">
-                        <span class="summary-label">Product Module</span>
-                        <span class="chip" style="background:rgba(255,169,77,.1);color:#FFA94D;">Upcoming</span>
+                        <span class="summary-label">Pending Orders</span>
+                        <span class="summary-val" th:text="${pendingOrders}">0</span>
                     </li>
                     <li class="summary-item">
-                        <span class="summary-label">Order Module</span>
-                        <span class="chip" style="background:rgba(255,169,77,.1);color:#FFA94D;">Upcoming</span>
+                        <span class="summary-label">New Today</span>
+                        <span class="summary-val" th:text="${newToday}">0</span>
                     </li>
                 </ul>
             </div>

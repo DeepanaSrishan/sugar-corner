@@ -4,21 +4,25 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
- * Maps the /uploads/** URL path to the actual "uploads/" folder on disk.
+ * Maps URL paths to static resource locations.
  *
- * WHY THIS IS NEEDED:
- *   - Spring Boot only serves files from src/main/resources/static/ by default.
- *   - Uploaded images are saved to uploads/ folder at the project root (outside classpath).
- *   - Without this config, the browser gets 404 for every uploaded image.
+ * THE BUG THAT WAS HERE:
+ *   When you override addResourceHandlers(), Spring Boot STOPS applying
+ *   its own default static-resource mapping (classpath:/static/).
+ *   The original code only registered /uploads/** and /static/**,
+ *   so a request to /videos/bg-video.mp4 returned 404 because
+ *   no handler covered the root /** path from classpath:/static/.
  *
- * HOW IT WORKS:
- *   - When browser requests  GET /uploads/products/product_1_abc.jpg
- *   - Spring looks inside    <project-root>/uploads/products/product_1_abc.jpg
- *   - And serves it directly as a static resource.
+ * THE FIX:
+ *   Added a /** handler that points back to classpath:/static/.
+ *   This restores the default Spring Boot behaviour so any file placed
+ *   in src/main/resources/static/ is served at its direct URL:
+ *     /videos/bg-video.mp4  → static/videos/bg-video.mp4  ✅
+ *     /css/style.css        → static/css/style.css         ✅
+ *   The /uploads/** and /static/** handlers are kept as before.
  */
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
@@ -26,20 +30,30 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
 
-        // Resolve the absolute path of the uploads folder
-        // Paths.get("uploads").toAbsolutePath() = C:/Users/you/brownie-shop/uploads  (Windows)
-        //                                       = /home/you/brownie-shop/uploads      (Linux/Mac)
+        // ── 1. Uploaded images (outside classpath) ──────────────────
+        // Maps /uploads/** → <project-root>/uploads/ on disk.
         String uploadsAbsolutePath = Paths.get("uploads")
                 .toAbsolutePath()
                 .toUri()
                 .toString();
 
-        // Map URL /uploads/** → disk folder uploads/
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations(uploadsAbsolutePath + "/");
 
-        // Also keep Spring's default static resource handling working
+        // ── 2. Explicit /static/** prefix (kept for compatibility) ──
         registry.addResourceHandler("/static/**")
+                .addResourceLocations("classpath:/static/");
+
+        // ── 3. FIX: Default static handler ─────────────────────────
+        // Restores Spring Boot's default behaviour that was lost when
+        // we overrode addResourceHandlers().
+        // Maps /** → classpath:/static/ so that:
+        //   /videos/bg-video.mp4  works  (was returning 404 before this fix)
+        //   /css/x.css            works
+        //   /js/x.js              works
+        // Must be registered LAST so /uploads/** and /static/** are
+        // matched first for their specific paths.
+        registry.addResourceHandler("/**")
                 .addResourceLocations("classpath:/static/");
     }
 }

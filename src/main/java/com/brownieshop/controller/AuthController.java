@@ -13,6 +13,9 @@ import java.util.Optional;
 @Controller
 public class AuthController {
 
+    private static final String SESSION_CUSTOMER = "customerUser";
+    private static final String SESSION_ADMIN = "adminUser";
+
     @Autowired
     private AuthService authService;
 
@@ -25,7 +28,7 @@ public class AuthController {
     // ── Register ───────────────────────────────────────────────
     @GetMapping("/register")
     public String showRegister(HttpSession session) {
-        if (session.getAttribute("customer") != null) return "redirect:/customer/dashboard";
+        if (session.getAttribute(SESSION_CUSTOMER) != null) return "redirect:/customer/dashboard";
         return "register";
     }
 
@@ -64,10 +67,11 @@ public class AuthController {
     // ── Login ──────────────────────────────────────────────────
     @GetMapping("/login")
     public String showLogin(HttpSession session) {
-        if (session.getAttribute("customer") != null) {
-            Customer c = (Customer) session.getAttribute("customer");
-            return c.isAdmin() ? "redirect:/admin/dashboard" : "redirect:/customer/dashboard";
-        }
+        Customer customer = (Customer) session.getAttribute(SESSION_CUSTOMER);
+        if (customer != null) return "redirect:/customer/dashboard";
+
+        Customer admin = (Customer) session.getAttribute(SESSION_ADMIN);
+        if (admin != null) return "redirect:/admin/dashboard";
         return "login";
     }
 
@@ -86,22 +90,22 @@ public class AuthController {
         }
 
         Customer c = opt.get();
-        session.setAttribute("customer", c);
-        session.setAttribute("customerId", c.getId());
-
         if (c.isAdmin()) {
+            session.setAttribute(SESSION_ADMIN, c);
+            session.setAttribute("customer", c);
             return "redirect:/admin/dashboard";
         }
+
+        session.setAttribute(SESSION_CUSTOMER, c);
+        session.setAttribute("customer", c);
+        session.setAttribute("customerId", c.getId());
         return "redirect:/customer/dashboard";
     }
 
     // ── Admin Login (separate page) ────────────────────────────
     @GetMapping("/admin/login")
     public String showAdminLogin(HttpSession session) {
-        if (session.getAttribute("customer") != null) {
-            Customer c = (Customer) session.getAttribute("customer");
-            if (c.isAdmin()) return "redirect:/admin/dashboard";
-        }
+        if (session.getAttribute(SESSION_ADMIN) != null) return "redirect:/admin/dashboard";
         return "admin/admin-login";
     }
 
@@ -119,6 +123,7 @@ public class AuthController {
             return "admin/admin-login";
         }
 
+        session.setAttribute(SESSION_ADMIN, opt.get());
         session.setAttribute("customer", opt.get());
         return "redirect:/admin/dashboard";
     }

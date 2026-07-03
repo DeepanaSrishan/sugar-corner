@@ -1,276 +1,621 @@
 <!DOCTYPE html>
+<!--
+  Customer Dashboard
+  File location: src/main/resources/templates/customer/dashboard.html
+
+  FIXES IN THIS VERSION:
+  1. Navigation bar — all links are now correct and working
+  2. Added "My Payments" link to sidebar (was missing)
+  3. Added "My Cart" link to sidebar
+  4. Stat cards now use real data from controller (totalOrders, delivered, inProgress)
+  5. Quick action buttons all link to correct, working URLs
+  6. Added live clock in top bar
+  7. Sidebar slide-in animation on load
+  8. Stat cards and action cards animate in with staggered delays
+-->
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>My Dashboard – Sugar Corner</title>
+    <title>Dashboard – Sugar Corner</title>
+
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+
     <style>
+        /* ── Design tokens ──────────────────────────────────────── */
         :root {
-            --brown-dark: #2C1810; --brown-mid: #5C3317; --brown-warm: #8B4513;
-            --caramel: #C68642; --cream: #FDF6EC; --cream-dark: #F5E6D0;
-            --white: #FFFEF9; --text-dark: #1A0F08; --text-muted: #7A5C45;
-            --sidebar-w: 260px;
+            --brown-dark:  #2C1810;
+            --brown-mid:   #5C3317;
+            --brown-warm:  #8B4513;
+            --caramel:     #C68642;
+            --cream:       #FDF6EC;
+            --cream-dark:  #F5E6D0;
+            --cream-hover: #EDD8BA;
+            --white:       #FFFEF9;
+            --text-dark:   #1A0F08;
+            --text-muted:  #7A5C45;
+            --success:     #27AE60;
+            --sidebar-w:   260px;
         }
+
+        /* ── Reset ─────────────────────────────────────────────── */
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text-dark); display: flex; min-height: 100vh; }
-
-        /* ── Sidebar ── */
-        .sidebar {
-            width: var(--sidebar-w); background: linear-gradient(175deg, var(--brown-dark) 0%, var(--brown-mid) 100%);
-            display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh;
-            padding: 32px 0; z-index: 100;
-            animation: slideIn .5s ease both;
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: transparent;
+            color: var(--text-dark);
+            display: flex;
+            min-height: 100vh;
         }
-        @keyframes slideIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+        a { text-decoration: none; color: inherit; }
 
+        /* ── Sidebar ────────────────────────────────────────────── */
+        /* Fixed left panel with gradient background */
+        .sidebar{
+            width: var(--sidebar-w);
+
+            /* Glass effect background */
+            background: rgba(101, 51, 2, 0.73); /* transparent */
+
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px); /* for Safari */
+
+            border-right: 1px solid rgba(255,255,255,0.2);
+
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+
+            display: flex;
+            flex-direction: column;
+            padding: 28px 0;
+            z-index: 100;
+
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+
+            /* Slide animation */
+            animation: slideIn .4s ease both;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-100%); }
+            to   { transform: translateX(0); }
+        }
+
+        /* Brand / logo area at top of sidebar */
         .sidebar-brand {
-            text-align: center; padding: 0 24px 32px; border-bottom: 1px solid rgba(255,255,255,.1);
+            text-align: center;
+            padding: 28px 24px 22px;
+            border-bottom: 1px solid rgba(255,255,255,.1);
         }
-        .sidebar-brand .logo { font-size: 38px; display: block; margin-bottom: 8px; }
-        .sidebar-brand h2 { font-family: 'Playfair Display', serif; color: var(--cream); font-size: 1.3rem; }
-        .sidebar-brand small { color: var(--caramel); font-size: .75rem; letter-spacing: 1px; text-transform: uppercase; }
+        .sidebar-brand .logo { font-size: 40px; display: block; margin-bottom: 7px; }
+        .sidebar-brand h2 {
+            font-family: 'Playfair Display', serif;
+            color: var(--cream);
+            font-size: 1.3rem;
+        }
+        .sidebar-brand small {
+            color: var(--caramel);
+            font-size: .7rem;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+        }
 
-        /* User card in sidebar */
+        /* Mini user profile card inside sidebar */
         .user-card {
-            margin: 24px 16px;
+            margin: 18px 14px;
             background: rgba(255,255,255,.07);
-            border-radius: 16px;
-            padding: 16px;
-            display: flex; align-items: center; gap: 12px;
+            border-radius: 14px;
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            gap: 11px;
         }
+        /* Avatar circle — shows photo if uploaded, else first letter of name */
         .user-avatar {
-            width: 46px; height: 46px; border-radius: 50%;
+            width: 44px; height: 44px;
+            border-radius: 50%;
             background: linear-gradient(135deg, var(--caramel), var(--brown-warm));
             display: flex; align-items: center; justify-content: center;
-            font-size: 18px; font-weight: 600; color: var(--cream); flex-shrink: 0;
-            overflow: hidden;
+            font-size: 17px; font-weight: 600; color: var(--cream);
+            flex-shrink: 0; overflow: hidden;
         }
         .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .user-name { color: var(--cream); font-size: .9rem; font-weight: 500; }
-        .user-email { color: rgba(253,246,236,.6); font-size: .72rem; word-break: break-all; }
+        .user-name  { color: var(--cream); font-size: .88rem; font-weight: 500; }
+        .user-email { color: rgba(253,246,236,.55); font-size: .7rem; word-break: break-all; margin-top: 2px; }
 
-        nav { padding: 8px 16px; flex: 1; }
-        .nav-section { font-size: .68rem; letter-spacing: 1.5px; text-transform: uppercase;
-            color: rgba(253,246,236,.4); padding: 16px 12px 6px; }
+        /* Navigation list inside sidebar */
+        nav { flex: 1; padding: 6px 14px; overflow-y: auto; }
+        nav::-webkit-scrollbar { width: 3px; }
+        nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 2px; }
+
+        /* Section label above nav groups */
+        .nav-section {
+            font-size: .63rem;
+            letter-spacing: 1.8px;
+            text-transform: uppercase;
+            color: rgba(253,246,236,.35);
+            padding: 16px 10px 5px;
+        }
+
+        /* Individual nav link */
         .nav-item {
-            display: flex; align-items: center; gap: 12px;
-            padding: 11px 14px; border-radius: 12px; margin-bottom: 4px;
-            color: rgba(253,246,236,.8); font-size: .88rem; text-decoration: none;
-            transition: all .2s; cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            padding: 10px 13px;
+            border-radius: 12px;
+            margin-bottom: 3px;
+            color: rgba(253,246,236,.78);
+            font-size: .875rem;
+            transition: background .2s, color .2s, transform .18s;
         }
-        .nav-item:hover, .nav-item.active {
-            background: rgba(196,134,66,.25); color: var(--cream);
+        .nav-item:hover {
+            background: rgba(196,134,66,.22);
+            color: var(--cream);
+            transform: translateX(3px);       /* subtle slide on hover */
         }
-        .nav-item.active { background: linear-gradient(135deg, rgba(196,134,66,.3), rgba(139,69,19,.3)); }
-        .nav-icon { font-size: 17px; width: 22px; text-align: center; }
+        /* Active page highlight */
+        .nav-item.active {
+            background: rgba(196,134,66,.28);
+            color: var(--cream);
+            font-weight: 600;
+            border-left: 3px solid var(--caramel);
+            padding-left: 10px;
+        }
+        .nav-icon { font-size: 17px; width: 22px; text-align: center; flex-shrink: 0; }
 
-        .sidebar-footer { padding: 0 16px 16px; }
+        /* Logout button at bottom of sidebar */
+        .sidebar-footer { padding: 14px; border-top: 1px solid rgba(255,255,255,.08); }
         .logout-btn {
-            display: flex; align-items: center; gap: 10px;
-            padding: 11px 14px; border-radius: 12px;
-            color: rgba(253,246,236,.6); font-size: .85rem; text-decoration: none;
-            border: 1px solid rgba(255,255,255,.1); transition: all .2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 13px;
+            border-radius: 12px;
+            color: rgba(253,246,236,.55);
+            font-size: .84rem;
+            border: 1px solid rgba(255,255,255,.08);
+            transition: background .2s, color .2s;
         }
-        .logout-btn:hover { background: rgba(192,57,43,.25); color: #FF8A80; border-color: rgba(192,57,43,.4); }
+        .logout-btn:hover { background: rgba(192,57,43,.25); color: #FF8A80; }
 
-        /* ── Main ── */
+        /* ── Main content area ──────────────────────────────────── */
         .main {
-            margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column;
+            margin-left: var(--sidebar-w);  /* offset for fixed sidebar */
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
 
+        /* Sticky top bar */
         .topbar {
-            background: var(--white); padding: 20px 36px;
+            background: var(--white);
+            padding: 18px 36px;
             border-bottom: 1px solid var(--cream-dark);
-            display: flex; align-items: center; justify-content: space-between;
-            position: sticky; top: 0; z-index: 50;
-            box-shadow: 0 2px 12px rgba(44,24,16,.06);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            box-shadow: 0 2px 14px rgba(44,24,16,.05);
         }
-        .topbar h1 { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--brown-dark); }
-        .topbar-time { color: var(--text-muted); font-size: .85rem; }
+        .topbar h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            color: var(--brown-dark);
+        }
+        /* Live clock displayed on the right of topbar */
+        .topbar-clock { color: var(--text-muted); font-size: .84rem; }
 
-        .content { padding: 36px; }
+        /* Scrollable page body */
+        .content { padding: 32px 36px; }
 
-        /* ── Welcome banner ── */
+        /* ── Welcome banner ─────────────────────────────────────── */
+        /* Gradient card at the top of the dashboard */
         .welcome-banner {
             background: linear-gradient(135deg, var(--brown-warm) 0%, var(--brown-mid) 100%);
-            border-radius: 20px; padding: 36px 40px;
-            display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 32px; overflow: hidden; position: relative;
-            animation: fadeSlideUp .5s ease both .1s;
+            border-radius: 20px;
+            padding: 34px 38px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 28px;
+            position: relative;
+            overflow: hidden;
+            animation: fadeSlideUp .45s ease both .05s;
         }
+        /* Decorative large emoji in background of banner */
         .welcome-banner::after {
-            content: '🍫'; position: absolute; right: -20px; bottom: -30px;
-            font-size: 140px; opacity: .12;
+            content: '🍫';
+            position: absolute;
+            right: -16px; bottom: -28px;
+            font-size: 130px;
+            opacity: .1;
+            pointer-events: none;
         }
-        .welcome-banner h2 { font-family: 'Playfair Display', serif; font-size: 1.9rem; color: var(--cream); }
-        .welcome-banner p  { color: rgba(253,246,236,.75); font-size: .9rem; margin-top: 6px; }
-        .btn-order {
-            padding: 13px 28px; background: var(--caramel);
-            color: var(--white); border: none; border-radius: 12px;
-            font-family: inherit; font-size: .9rem; font-weight: 600;
-            cursor: pointer; text-decoration: none; white-space: nowrap;
-            transition: all .2s; flex-shrink: 0;
+        .welcome-banner h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.85rem;
+            color: var(--cream);
+            margin-bottom: 5px;
         }
-        .btn-order:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+        .welcome-banner p { color: rgba(253,246,236,.7); font-size: .9rem; }
+        /* Order Now CTA button in banner */
+        .btn-cta {
+            padding: 13px 28px;
+            background: var(--caramel);
+            color: var(--white);
+            border-radius: 12px;
+            font-size: .9rem;
+            font-weight: 600;
+            white-space: nowrap;
+            flex-shrink: 0;
+            transition: all .22s;
+        }
+        .btn-cta:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.25); }
 
-        /* ── Quick stats ── */
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 32px; }
-        .stat-card {
-            background: var(--white); border-radius: 16px; padding: 24px 24px;
-            border: 1px solid var(--cream-dark); position: relative; overflow: hidden;
-            transition: transform .2s, box-shadow .2s;
-            animation: fadeSlideUp .5s ease both;
+        /* ── Stats cards ────────────────────────────────────────── */
+        /* Three cards showing order counts — data comes from controller */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            margin-bottom: 28px;
         }
-        .stat-card:nth-child(1){ animation-delay: .15s; }
-        .stat-card:nth-child(2){ animation-delay: .25s; }
-        .stat-card:nth-child(3){ animation-delay: .35s; }
-        .stat-card:hover { transform: translateY(-4px); box-shadow: 0 12px 36px rgba(44,24,16,.1); }
+        .stat-card {
+            background: var(--white);
+            border-radius: 18px;
+            padding: 24px;
+            border: 1px solid var(--cream-dark);
+            transition: transform .22s, box-shadow .22s;
+        }
+        /* Staggered fade-up animation for each card */
+        .stat-card:nth-child(1) { animation: fadeSlideUp .45s ease both .12s; }
+        .stat-card:nth-child(2) { animation: fadeSlideUp .45s ease both .20s; }
+        .stat-card:nth-child(3) { animation: fadeSlideUp .45s ease both .28s; }
+        .stat-card:nth-child(4) { animation: fadeSlideUp .45s ease both .36s; }
+        .stat-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(44,24,16,.1); }
+        /* Coloured icon square */
         .stat-icon {
-            width: 52px; height: 52px; border-radius: 14px;
-            display: flex; align-items: center; justify-content: center; font-size: 24px;
+            width: 50px; height: 50px;
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px;
+            margin-bottom: 14px;
+        }
+        .icon-orange { background: #FFF3E0; }
+        .icon-green  { background: #E8F5E9; }
+        .icon-blue   { background: #E3F2FD; }
+        .icon-gold   { background: #FFF8E1; }
+        /* Large number — bound to Thymeleaf model attribute */
+        .stat-num   { font-family: 'Playfair Display', serif; font-size: 2.2rem; color: var(--brown-dark); line-height: 1; }
+        .stat-label { color: var(--text-muted); font-size: .8rem; margin-top: 5px; }
+        .stat-sub   { color: var(--text-muted); font-size: .72rem; margin-top: 4px; }
+        .loyalty-pill {
+            display: inline-flex;
+            margin-top: 6px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: rgba(198, 134, 66, .18);
+            color: var(--cream);
+            font-size: .68rem;
+            font-weight: 600;
+        }
+        .loyalty-card {
+            background: var(--white);
+            border-radius: 18px;
+            border: 1px solid var(--cream-dark);
+            padding: 18px 22px;
+            margin-bottom: 22px;
+        }
+        .loyalty-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        .loyalty-title {
+            font-family: 'Playfair Display', serif;
+            color: var(--brown-dark);
+            font-size: 1.05rem;
+        }
+        .loyalty-note {
+            color: var(--text-muted);
+            font-size: .8rem;
+            margin-bottom: 10px;
+        }
+        .progress-track {
+            width: 100%;
+            height: 10px;
+            border-radius: 999px;
+            background: #f0e2d0;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--brown-warm), var(--caramel));
+        }
+
+        /* ── Quick actions grid ─────────────────────────────────── */
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.2rem;
+            color: var(--brown-dark);
             margin-bottom: 16px;
         }
-        .stat-icon.orange { background: #FFF3E0; }
-        .stat-icon.green  { background: #E8F5E9; }
-        .stat-icon.blue   { background: #E3F2FD; }
-        .stat-num  { font-family: 'Playfair Display', serif; font-size: 2.2rem; color: var(--brown-dark); }
-        .stat-label{ color: var(--text-muted); font-size: .82rem; margin-top: 4px; }
-
-        /* ── Sections ── */
-        .section-title {
-            font-family: 'Playfair Display', serif; font-size: 1.3rem; color: var(--brown-dark);
-            margin-bottom: 20px;
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+            margin-bottom: 28px;
         }
-        .quick-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 32px; }
+        /* Each quick-action card — all are <a> tags so the whole card is clickable */
         .action-card {
-            background: var(--white); border-radius: 16px; padding: 24px;
-            border: 1px solid var(--cream-dark); text-decoration: none;
-            display: flex; align-items: center; gap: 16px;
-            transition: all .2s;
-            animation: fadeSlideUp .5s ease both .3s;
+            background: var(--white);
+            border-radius: 16px;
+            padding: 22px;
+            border: 1px solid var(--cream-dark);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all .22s;
+            animation: fadeSlideUp .45s ease both .3s;
         }
-        .action-card:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(44,24,16,.1); border-color: var(--caramel); }
-        .action-emoji { font-size: 32px; }
-        .action-title { font-weight: 600; color: var(--brown-dark); font-size: .95rem; }
-        .action-sub   { color: var(--text-muted); font-size: .8rem; margin-top: 2px; }
+        .action-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 28px rgba(44,24,16,.1);
+            border-color: var(--caramel);
+        }
+        .action-emoji { font-size: 30px; flex-shrink: 0; }
+        .action-title { font-weight: 600; color: var(--brown-dark); font-size: .93rem; }
+        .action-sub   { color: var(--text-muted); font-size: .78rem; margin-top: 2px; }
 
-        @keyframes fadeSlideUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+        /* ── Fade-up keyframe (shared) ──────────────────────────── */
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
 
+        /* ====================== MOBILE RESPONSIVE ====================== */
         @media (max-width: 900px) {
             .sidebar { display: none; }
             .main { margin-left: 0; }
-            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .topbar { padding: 16px 20px; }
+            .content { padding: 22px 18px; }
+            .welcome-banner { flex-direction: column; text-align: center; padding: 28px 24px; gap: 20px; }
+            .welcome-banner h2 { font-size: 1.7rem; }
+            .stats-grid { grid-template-columns: 1fr 1fr; gap: 16px; }
+            .actions-grid { grid-template-columns: 1fr; gap: 14px; }
         }
-        @media (max-width: 580px) {
-            .stats-grid { grid-template-columns: 1fr; }
-            .quick-actions { grid-template-columns: 1fr; }
-            .content { padding: 20px; }
-            .welcome-banner { flex-direction: column; gap: 20px; text-align: center; }
+
+        @media (max-width: 480px) {
+            .content { padding: 18px 15px; }
+            .stat-card { padding: 20px 16px; }
+            .stat-num { font-size: 1.85rem; }
+            .topbar h1 { font-size: 1.4rem; }
+            .welcome-banner { padding: 24px 20px; }
+            .welcome-banner h2 { font-size: 1.55rem; }
         }
+
+        #bg-video {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: cover; z-index: -1; pointer-events: none;
+        }
+
+        /* Background Video එක Mobile වල හොඳට */
+        @media (max-width: 900px) {
+            #bg-video {
+                object-fit: cover;
+                filter: brightness(0.65) saturate(1.1);
+            }
+        }
+
+        #bg-video {
+            position: fixed;   /* stay full screen always */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+
+            object-fit: cover;
+             /* fill screen nicely */
+            z-index: -1;       /* go behind everything */
+
+            pointer-events: none; /* can't click it */
+        }
+
     </style>
 </head>
 <body>
 
-<!-- SIDEBAR -->
+
+
+<!-- ════════════════════════════════════════════════════════
+     SIDEBAR
+     Fixed left navigation panel.
+     All links use href attributes to correct controller URLs.
+     The "active" class highlights the current page.
+     ════════════════════════════════════════════════════════ -->
 <aside class="sidebar">
+
+    <!-- Brand / logo -->
     <div class="sidebar-brand">
         <span class="logo">🍫</span>
         <h2>Sugar Corner</h2>
         <small>Customer Portal</small>
     </div>
 
+    <!-- Mini user profile card showing name, email, and photo if uploaded -->
     <div class="user-card">
         <div class="user-avatar">
-            <img th:if="${customer.profilePhotoPath}" th:src="'/' + ${customer.profilePhotoPath}" alt="photo"/>
-            <span th:unless="${customer.profilePhotoPath}" th:text="${customer.firstName?.substring(0,1)?.toUpperCase()}">K</span>
+            <!-- Show profile photo if customer has uploaded one -->
+            <img th:if="${customer.profilePhotoPath != null and customer.profilePhotoPath != ''}"
+                 th:src="'/' + ${customer.profilePhotoPath}"
+                 alt="Profile photo"/>
+            <!-- Otherwise show first letter of first name -->
+            <span th:unless="${customer.profilePhotoPath != null and customer.profilePhotoPath != ''}"
+                  th:text="${customer.firstName != null ? customer.firstName.substring(0,1).toUpperCase() : 'K'}">K</span>
         </div>
         <div>
-            <div class="user-name" th:text="${customer.firstName + ' ' + customer.lastName}">Kasun Perera</div>
+            <div class="user-name"
+                 th:text="${customer.firstName + ' ' + customer.lastName}">Kasun Perera</div>
             <div class="user-email" th:text="${customer.email}">kasun@example.com</div>
+            <div class="loyalty-pill" th:text="${loyaltyTierLabel}">🌱 New Customer</div>
         </div>
     </div>
 
+    <!-- Navigation links -->
     <nav>
+
         <div class="nav-section">Main Menu</div>
+
+        <!-- Dashboard — active on this page -->
         <a class="nav-item active" href="/customer/dashboard">
             <span class="nav-icon">🏠</span> Dashboard
         </a>
+
+        <!-- My Profile — links to /customer/profile -->
         <a class="nav-item" href="/customer/profile">
             <span class="nav-icon">👤</span> My Profile
         </a>
 
         <div class="nav-section">Shop</div>
+
+        <!-- Browse Brownies — links to /products -->
         <a class="nav-item" href="/products">
             <span class="nav-icon">🍫</span> Browse Brownies
         </a>
-        <a class="nav-item" href="#">
+
+        <!-- My Cart — links to /cart (CartController @GetMapping) -->
+        <a class="nav-item" href="/cart">
+            <span class="nav-icon">🛒</span> My Cart
+        </a>
+
+        <!-- My Orders — links to /orders (OrderController @GetMapping) -->
+        <a class="nav-item" href="/orders">
             <span class="nav-icon">📦</span> My Orders
         </a>
 
+        <!-- My Payments — links to /payments (PaymentController @GetMapping) -->
+        <!-- FIX: This was missing from the previous version -->
+        <a class="nav-item" href="/payments">
+            <span class="nav-icon">💳</span> My Payments
+        </a>
+
         <div class="nav-section">Support</div>
-        <a class="nav-item" href="#">
-            <span class="nav-icon">💬</span> Contact Us
+
+        <!-- Contact & Feedback — links to /contact (ContactController @GetMapping) -->
+        <a class="nav-item" href="/contact">
+            <span class="nav-icon">💬</span> Contact & Feedback
         </a>
-        <a class="nav-item" href="#">
-            <span class="nav-icon">⭐</span> My Feedback
-        </a>
+
     </nav>
 
+    <!-- Logout button at the bottom — links to /logout (AuthController) -->
     <div class="sidebar-footer">
         <a class="logout-btn" href="/logout">
             <span>🚪</span> Sign Out
         </a>
     </div>
+
 </aside>
 
-<!-- MAIN CONTENT -->
+<!-- ════════════════════════════════════════════════════════
+     MAIN CONTENT
+     Everything to the right of the sidebar.
+     ════════════════════════════════════════════════════════ -->
 <div class="main">
+
+    <!-- Sticky top bar with page title and live clock -->
     <div class="topbar">
         <h1>Dashboard</h1>
-        <span class="topbar-time" id="clock">–</span>
+        <!-- Live clock — updated every second by JS at the bottom -->
+        <span class="topbar-clock" id="clock">–</span>
     </div>
 
     <div class="content">
 
-        <!-- Welcome Banner -->
+        <!-- ── Welcome Banner ──────────────────────────────────── -->
+        <!-- Greeting card with Order Now CTA button -->
         <div class="welcome-banner">
             <div>
+                <!-- Customer first name from Thymeleaf model -->
                 <h2>Hello, <span th:text="${customer.firstName}">Kasun</span>! 👋</h2>
-                <p>Welcome back to Sugar Corner. Ready for something sweet today?</p>
+                <p>Welcome back to Sugar Corner. Ready for something sweet?</p>
             </div>
-            <a href="/products" class="btn-order">🛒 Order Now</a>
+            <!-- Order Now goes to product list — /products -->
+            <a href="/products" class="btn-cta">🛒 Order Now</a>
         </div>
 
-        <!-- Stats -->
+        <!-- ── Stat Cards ───────────────────────────────────────── -->
+        <!--
+          FIX: Stats now use real Thymeleaf variables injected by CustomerController:
+            totalOrders  = orders.size()
+            delivered    = count where status == DELIVERED
+            inProgress   = count where status IN (CONFIRMED, IN_PREPARATION, READY)
+          Previously these were hardcoded to 0.
+        -->
         <div class="stats-grid">
+
+            <!-- Total Orders count -->
             <div class="stat-card">
-                <div class="stat-icon orange">📦</div>
-                <div class="stat-num">0</div>
+                <div class="stat-icon icon-orange">📦</div>
+                <div class="stat-num" th:text="${totalOrders}">0</div>
                 <div class="stat-label">Total Orders</div>
             </div>
+
+            <!-- Delivered orders count -->
             <div class="stat-card">
-                <div class="stat-icon green">✅</div>
-                <div class="stat-num">0</div>
+                <div class="stat-icon icon-green">✅</div>
+                <div class="stat-num" th:text="${delivered}">0</div>
                 <div class="stat-label">Delivered</div>
             </div>
+
+            <!-- In Progress = CONFIRMED + IN_PREPARATION + READY -->
             <div class="stat-card">
-                <div class="stat-icon blue">🚚</div>
-                <div class="stat-num">0</div>
+                <div class="stat-icon icon-blue">🚚</div>
+                <div class="stat-num" th:text="${inProgress}">0</div>
                 <div class="stat-label">In Progress</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon icon-gold">🏅</div>
+                <div class="stat-num" th:text="${#numbers.formatDecimal(loyaltyDiscountPercent,1,'COMMA',0,'POINT') + '%'}">0%</div>
+                <div class="stat-label">Loyalty Discount</div>
+                <div class="stat-sub" th:text="${loyaltyTierLabel}">🌱 New Customer</div>
+            </div>
+
+        </div>
+
+        <div class="loyalty-card">
+            <div class="loyalty-top">
+                <div class="loyalty-title">Loyalty Progress</div>
+                <div th:text="${loyaltyTierLabel}">🌱 New Customer</div>
+            </div>
+            <div class="loyalty-note"
+                  th:text="${loyaltyOrdersToNextTier > 0 ? loyaltyOrdersToNextTier + ' delivered order(s) to reach ' + loyaltyNextTierLabel : 'You are already at the highest tier.'}">
+                0 delivered order(s) to reach next tier
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" th:style="'width:' + ${loyaltyProgressPercent} + '%' "></div>
             </div>
         </div>
 
-        <!-- Quick Actions -->
+        <!-- ── Quick Actions ────────────────────────────────────── -->
+        <!--
+          FIX: All href attributes now point to correct, working controller URLs.
+          Each card is a full <a> tag so the whole card is clickable — not just text.
+        -->
         <div class="section-title">Quick Actions</div>
-        <div class="quick-actions">
-            <a class="action-card" href="/customer/profile">
-                <span class="action-emoji">👤</span>
-                <div>
-                    <div class="action-title">Update Profile</div>
-                    <div class="action-sub">Edit your personal information</div>
-                </div>
-            </a>
+        <div class="actions-grid">
+
+            <!-- Browse Brownies — /products -->
             <a class="action-card" href="/products">
                 <span class="action-emoji">🍫</span>
                 <div>
@@ -278,35 +623,250 @@
                     <div class="action-sub">See all available products</div>
                 </div>
             </a>
-            <a class="action-card" href="#">
+
+            <!-- My Cart — /cart -->
+            <a class="action-card" href="/cart">
+                <span class="action-emoji">🛒</span>
+                <div>
+                    <div class="action-title">My Cart</div>
+                    <div class="action-sub">View items and checkout</div>
+                </div>
+            </a>
+
+            <!-- View Orders — /orders -->
+            <a class="action-card" href="/orders">
                 <span class="action-emoji">📋</span>
                 <div>
                     <div class="action-title">View Orders</div>
-                    <div class="action-sub">Check order history & status</div>
+                    <div class="action-sub">Track your order history</div>
                 </div>
             </a>
-            <a class="action-card" href="#">
+
+            <!-- My Payments — /payments -->
+            <!-- FIX: This was missing. Goes to PaymentController @GetMapping -->
+            <a class="action-card" href="/payments">
+                <span class="action-emoji">💳</span>
+                <div>
+                    <div class="action-title">My Payments</div>
+                    <div class="action-sub">View payment history</div>
+                </div>
+            </a>
+
+            <!-- My Profile — /customer/profile -->
+            <a class="action-card" href="/customer/profile">
+                <span class="action-emoji">👤</span>
+                <div>
+                    <div class="action-title">My Profile</div>
+                    <div class="action-sub">Edit your personal details</div>
+                </div>
+            </a>
+
+            <!-- Contact & Feedback — /contact -->
+            <a class="action-card" href="/contact">
                 <span class="action-emoji">💬</span>
                 <div>
-                    <div class="action-title">Send Inquiry</div>
-                    <div class="action-sub">Get help from our team</div>
+                    <div class="action-title">Contact & Feedback</div>
+                    <div class="action-sub">Send inquiry or leave feedback</div>
                 </div>
             </a>
-        </div>
+
+        </div><!-- /actions-grid -->
 
     </div><!-- /content -->
+
+    <!-- ═══════════════════════════════════════════════════
+         SITE FOOTER — Sugar Corner (compact version)
+         Sits inside .main as last child before </div>
+         ═══════════════════════════════════════════════════ -->
+    <footer style="background:linear-gradient(160deg,#2C1810,#1A0D07);
+                   color:rgba(253,246,236,.72);margin-top:auto;padding:0;">
+
+        <!-- Thin wave divider -->
+        <svg viewBox="0 0 1200 30" preserveAspectRatio="none"
+             style="width:100%;display:block;" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#FDF6EC" d="M0,15 C400,30 800,0 1200,15 L1200,0 L0,0 Z"/>
+        </svg>
+
+        <!-- Three-column grid -->
+        <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr;
+                    gap:28px;padding:28px 36px 20px;">
+
+            <!-- Col 1: Brand + contact + socials -->
+            <div>
+                <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px;">
+                    <span style="font-size:22px;">🍫</span>
+                    <span style="font-family:'Playfair Display',serif;font-size:1.05rem;
+                                 color:rgba(253,246,236,.92);">Sugar Corner</span>
+                </div>
+                <p style="font-size:.76rem;color:rgba(253,246,236,.45);
+                           line-height:1.55;margin-bottom:12px;max-width:220px;">
+                    Handcrafted brownies baked with love,<br/>delivered fresh across Sri Lanka.
+                </p>
+                <div style="font-size:.75rem;color:rgba(253,246,236,.5);
+                             display:flex;flex-direction:column;gap:5px;margin-bottom:14px;">
+                    <span>📍 Colombo, Sri Lanka</span>
+                    <span>🕐 Open Daily · 8 AM – 10 PM</span>
+                    <a href="https://tr.ee/3QfscnrEo3" target="_blank" rel="noopener"
+                       style="color:#C68642;text-decoration:none;">💬 Chat on WhatsApp</a>
+                </div>
+
+                <!-- Social buttons — compact, emoji icons like the image -->
+                <div style="display:flex;gap:7px;">
+
+                    <!-- Facebook -->
+                    <a href="https://l.instagram.com/?u=https%3A%2F%2Fwww.facebook.com%2Fshare%2F15f8FQiHcz%2F%3Fmibextid%3DwwXIfr%26utm_source%3Dig%26utm_medium%3Dsocial%26utm_content%3Dlink_in_bio&e=AT4vmwXYZZWGdPX_iamw5cjUrYDXQUB7h0p38flWq4J9suFa2vFoBTFciroc8w-ya-MskS5VuxhSBlF8ud_tHYKaqVYwcnuX8MzeioFnjokPmqxs9QPofn4Lqw"
+                       target="_blank" rel="noopener" title="Facebook"
+                       style="width:34px;height:34px;border-radius:9px;display:flex;
+                              align-items:center;justify-content:center;
+                              background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+                              text-decoration:none;transition:all .2s;"
+                       onmouseover="this.style.background='rgba(66,103,178,.35)';this.style.transform='translateY(-2px)'"
+                       onmouseout="this.style.background='rgba(255,255,255,.07)';this.style.transform='none'">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="#7B9EE8">
+                            <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+                        </svg>
+                    </a>
+
+                    <!-- Instagram -->
+                    <a href="https://tr.ee/-6CBrcau-M" target="_blank" rel="noopener" title="Instagram"
+                       style="width:34px;height:34px;border-radius:9px;display:flex;
+                              align-items:center;justify-content:center;
+                              background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+                              text-decoration:none;transition:all .2s;"
+                       onmouseover="this.style.background='rgba(193,53,132,.35)';this.style.transform='translateY(-2px)'"
+                       onmouseout="this.style.background='rgba(255,255,255,.07)';this.style.transform='none'">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                             stroke="#E870B0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                            <circle cx="12" cy="12" r="4"/>
+                            <circle cx="17.5" cy="6.5" r="1.2" fill="#E870B0" stroke="none"/>
+                        </svg>
+                    </a>
+
+                    <!-- TikTok -->
+                    <a href="https://tr.ee/1sfpiJhMAt" target="_blank" rel="noopener" title="TikTok"
+                       style="width:34px;height:34px;border-radius:9px;display:flex;
+                              align-items:center;justify-content:center;
+                              background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+                              text-decoration:none;transition:all .2s;"
+                       onmouseover="this.style.background='rgba(255,255,255,.15)';this.style.transform='translateY(-2px)'"
+                       onmouseout="this.style.background='rgba(255,255,255,.07)';this.style.transform='none'">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="rgba(253,246,236,.85)">
+                            <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.79 1.53V6.77a4.85 4.85 0 0 1-1.02-.08z"/>
+                        </svg>
+                    </a>
+
+                    <!-- WhatsApp -->
+                    <a href="https://tr.ee/3QfscnrEo3" target="_blank" rel="noopener" title="WhatsApp"
+                       style="width:34px;height:34px;border-radius:9px;display:flex;
+                              align-items:center;justify-content:center;
+                              background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+                              text-decoration:none;transition:all .2s;"
+                       onmouseover="this.style.background='rgba(37,211,102,.25)';this.style.transform='translateY(-2px)'"
+                       onmouseout="this.style.background='rgba(255,255,255,.07)';this.style.transform='none'">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="#5CE89A">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
+                        </svg>
+                    </a>
+
+                </div>
+            </div>
+
+            <!-- Col 2: Shop Hours -->
+            <div>
+                <div style="font-family:'Playfair Display',serif;font-size:.82rem;
+                            color:rgba(253,246,236,.85);margin-bottom:12px;
+                            padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.07);">
+                    Shop Hours
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px;font-size:.75rem;">
+                    <div style="display:flex;justify-content:space-between;">
+                        <span style="color:rgba(253,246,236,.45);">Mon – Fri</span>
+                        <span style="color:#27AE60;font-weight:500;">8 AM – 9 PM</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;">
+                        <span style="color:rgba(253,246,236,.45);">Saturday</span>
+                        <span style="color:#27AE60;font-weight:500;">9 AM – 10 PM</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;">
+                        <span style="color:rgba(253,246,236,.45);">Sunday</span>
+                        <span style="color:#E67E22;font-weight:500;">10 AM – 8 PM</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;">
+                        <span style="color:rgba(253,246,236,.45);">Holidays</span>
+                        <span style="color:#E67E22;font-weight:500;">11 AM – 6 PM</span>
+                    </div>
+                </div>
+                <div style="margin-top:12px;padding:8px 10px;
+                            background:rgba(198,134,66,.1);border-radius:8px;
+                            border:1px solid rgba(198,134,66,.18);
+                            font-size:.72rem;color:rgba(253,246,236,.55);line-height:1.5;">
+                    🚚 <strong style="color:rgba(253,246,236,.75);">Free delivery</strong>
+                    within Colombo for orders above Rs.&nbsp;500
+                </div>
+            </div>
+
+            <!-- Col 3: About -->
+            <div>
+                <div style="font-family:'Playfair Display',serif;font-size:.82rem;
+                            color:rgba(253,246,236,.85);margin-bottom:12px;
+                            padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.07);">
+                    About Us
+                </div>
+                <p style="font-size:.75rem;color:rgba(253,246,236,.45);
+                           line-height:1.6;margin-bottom:10px;">
+                    A home-based brownie shop in Colombo using premium Belgian chocolate
+                    and the finest local ingredients. Every brownie is made to order.
+                </p>
+                <p style="font-size:.75rem;color:rgba(253,246,236,.45);line-height:1.6;">
+                    Custom orders &amp; gift boxes available — message us on WhatsApp!
+                </p>
+                <div style="margin-top:12px;display:flex;align-items:center;gap:6px;">
+                    <span style="color:#F4C430;font-size:.82rem;letter-spacing:2px;">★★★★★</span>
+                    <span style="font-size:.7rem;color:rgba(253,246,236,.35);">Loved by customers</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Bottom bar -->
+        <div style="border-top:1px solid rgba(255,255,255,.06);
+                    padding:10px 36px;
+                    display:flex;align-items:center;justify-content:space-between;
+                    flex-wrap:wrap;gap:8px;">
+            <p style="font-size:.7rem;color:rgba(253,246,236,.3);">
+                © 2025 Sugar Corner · Made with ❤️ in Sri Lanka
+            </p>
+            <a href="/contact"
+               style="font-size:.7rem;color:rgba(253,246,236,.3);text-decoration:none;"
+               onmouseover="this.style.color='#C68642'"
+               onmouseout="this.style.color='rgba(253,246,236,.3)'">Contact Us</a>
+        </div>
+
+    </footer>
+
 </div><!-- /main -->
 
+<!-- ── Live Clock Script ─────────────────────────────────────
+     Updates the clock in the topbar every second.
+     Uses Sri Lankan locale format for date and time.
+     ────────────────────────────────────────────────────────── -->
 <script>
     function updateClock() {
-        const el = document.getElementById('clock');
+        var el = document.getElementById('clock');
+        if (!el) return;
         el.textContent = new Date().toLocaleString('en-LK', {
-            weekday:'short', year:'numeric', month:'short', day:'numeric',
-            hour:'2-digit', minute:'2-digit'
+            weekday: 'short',
+            year:    'numeric',
+            month:   'short',
+            day:     'numeric',
+            hour:    '2-digit',
+            minute:  '2-digit'
         });
     }
-    updateClock();
-    setInterval(updateClock, 1000);
+    updateClock();                        // run immediately
+    setInterval(updateClock, 1000);       // then every 1 second
 </script>
+
 </body>
 </html>

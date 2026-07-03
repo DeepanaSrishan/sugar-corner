@@ -145,8 +145,74 @@ public class ProductDAO {
                 available, id);
     }
 
+    /** Decrease stock by qty. If stock reaches 0, product stays available but shows Out of Stock. */
+    public void decreaseStock(Long productId, int qty) {
+        jdbc.update(
+                "UPDATE products SET stock_quantity = GREATEST(0, stock_quantity - ?), updated_at = NOW() WHERE id = ?",
+                qty, productId);
+    }
+
+    /** Get current stock for a product */
+    public int getStock(Long productId) {
+        Integer stock = jdbc.queryForObject(
+                "SELECT stock_quantity FROM products WHERE id = ?", Integer.class, productId);
+        return stock != null ? stock : 0;
+    }
+
     // ── DELETE ────────────────────────────────────────────────
     public void deleteById(Long id) {
         jdbc.update("DELETE FROM products WHERE id=?", id);
     }
+
+    // ── POPULARITY / AUTO-FEATURED ────────────────────────────
+
+    /**
+     * Returns product IDs ranked by total quantity ordered across all orders,
+     * highest first. Used by autoUpdateFeatured() to determine popular products.
+     *
+     * SQL: JOIN order_items, GROUP BY product_id, SUM quantity, ORDER BY total DESC
+     * Returns up to `limit` product IDs.
+     */
+    public List<Long> getTopOrderedProductIds(int limit) {
+        return jdbc.queryForList(
+                "SELECT oi.product_id " +
+                        "FROM order_items oi " +
+                        "JOIN orders o ON oi.order_id = o.id " +
+                        "WHERE o.status IN ('CONFIRMED','IN_PREPARATION','READY','DELIVERED') " +
+                        "GROUP BY oi.product_id " +
+                        "ORDER BY SUM(oi.quantity) DESC " +
+                        "LIMIT ?",
+                Long.class, limit);
+    }
+
+    /**
+     * Clears featured flag on ALL products, then sets featured=true
+     * only on the products whose IDs are in the given list.
+     * Called by ProductService.autoUpdateFeatured().
+     */
+    public void clearAllFeatured() {
+        jdbc.update("UPDATE products SET featured = false, updated_at = NOW()");
+    }
+
+    public void setFeatured(Long productId, boolean featured) {
+        jdbc.update(
+                "UPDATE products SET featured = ?, updated_at = NOW() WHERE id = ?",
+                featured, productId);
+    }
+
+    /**
+     * Returns total times a product was ordered (sum of quantities).
+     * Shown on admin product list as "ordered X times".
+     */
+    public int getOrderedCount(Long productId) {
+        Integer count = jdbc.queryForObject(
+                "SELECT COALESCE(SUM(oi.quantity), 0) " +
+                        "FROM order_items oi " +
+                        "JOIN orders o ON oi.order_id = o.id " +
+                        "WHERE oi.product_id = ? " +
+                        "AND o.status IN ('CONFIRMED','IN_PREPARATION','READY','DELIVERED')",
+                Integer.class, productId);
+        return count != null ? count : 0;
+    }
+
 }

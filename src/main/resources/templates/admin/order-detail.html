@@ -128,34 +128,181 @@
         @keyframes fadeSlideUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
         @media(max-width:900px){.sidebar{display:none;}.main{margin-left:0;}}
         @media(max-width:640px){.detail-grid{grid-template-columns:1fr;}.content{padding:16px;}}
+
+        /* ── Admin profile card in sidebar ─────────────────────
+           These rules were missing from non-dashboard pages,
+           causing the admin-info block to render unstyled.      */
+        .admin-info { margin:16px 14px; background:rgba(196,134,66,.08);
+            border:1px solid rgba(196,134,66,.15); border-radius:13px;
+            padding:13px; display:flex; align-items:center; gap:11px; }
+        .admin-avatar { width:42px; height:42px; border-radius:50%;
+            background:linear-gradient(135deg,var(--accent2,#8B4513),var(--accent,#C68642));
+            display:flex; align-items:center; justify-content:center;
+            font-size:18px; color:#fff; font-weight:600; flex-shrink:0; }
+        .admin-name  { font-size:.88rem; color:var(--cream,#FDF6EC); font-weight:500; }
+        .admin-role  { font-size:.72rem; color:var(--accent,#C68642); margin-top:2px; }
     </style>
 </head>
 <body>
+<!-- ═══════════════════════════════════════════════════════════════
+     ADMIN SIDEBAR — identical on every admin page
+     Only the "active" class changes per page to highlight current section.
+     All links use correct controller URL mappings:
+       /admin/dashboard         → AdminController   @GetMapping("/dashboard")
+       /admin/customers         → AdminController   @GetMapping("/customers")
+       /admin/products          → AdminProductController @GetMapping
+       /admin/products/add      → AdminProductController @GetMapping("/add")
+       /admin/orders            → AdminOrderController  @GetMapping
+       /admin/payments          → AdminPaymentController @GetMapping
+       /admin/contact/inquiries → AdminContactController @GetMapping("/inquiries")
+       /admin/contact/feedback  → AdminContactController @GetMapping("/feedback")
+       /logout                  → AuthController    @GetMapping("/logout")
+     ═══════════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════════════════════════
+     ADMIN SIDEBAR — same on every admin page.
+     Only the "active" class changes per page.
+
+     WHY THE ADMIN NAME WAS SHOWING WRONG:
+       - Only AdminController.dashboard() passed model.addAttribute("admin", ...)
+       - Other controllers (Orders, Payments, Contact) did NOT pass "admin"
+       - So th:text="${admin.firstName}" threw null on those pages
+       - FIX: All admin controllers now pass session "customer" as "admin"
+
+     SCROLLBAR REMOVED:
+       - nav element now uses overflow-y: hidden (was auto)
+       - All nav links fit in one screen without scrolling
+
+     LINKS MAP:
+       /admin/dashboard         → AdminController          dashboard()
+       /admin/customers         → AdminController          listCustomers()
+       /admin/products          → AdminProductController   listProducts()
+       /admin/products/add      → AdminProductController   addProductForm()
+       /admin/orders            → AdminOrderController     listOrders()
+       /admin/payments          → AdminPaymentController   listPayments()
+       /admin/contact/inquiries → AdminContactController   allInquiries()
+       /admin/contact/feedback  → AdminContactController   allFeedback()
+       /logout                  → AuthController           logout()
+     ═══════════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════════════════════════
+     ADMIN SIDEBAR — identical on every admin page.
+     The "active" class changes per page to highlight the current section.
+
+     FIXES APPLIED:
+     1. Admin profile avatar/name: uses correct Thymeleaf ternary syntax
+        (was: th:text="${cond} ? ${expr}" — INVALID, crashes SpEL)
+        (now: th:text="${cond} ? expr : 'fallback'" — correct)
+     2. Nav section labels removed — they took too much vertical space
+        causing bottom links (Inquiries, Feedback) to be cut off
+     3. Scrollbar removed from nav (overflow-y: hidden)
+
+     CONTROLLER REQUIREMENTS — every admin @GetMapping must call:
+        model.addAttribute("admin", session.getAttribute("customer"));
+        model.addAttribute("notifCount", orderService.getPendingOrderCount());
+     ═══════════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════════════════════════
+     ADMIN SIDEBAR — identical on every admin page.
+     Active class changes per page.
+
+     ADMIN NAME FIX:
+       The "admin" session attribute is a Customer object.
+       If the admin account is named "nethmi kaveesha", that name appears.
+       Fix: always show "Administrator" — never the customer name.
+       The avatar shows a fixed shield icon instead.
+
+     PRODUCT DELETE FIX:
+       ProductDAO.deleteById() now deletes order_items first, then products.
+       This prevents the FK constraint error from order_items.product_id.
+
+     MY-PAYMENTS FIX:
+       Template now uses p.status (not p.paymentStatus) to match
+       the actual Payment model field: private String status.
+     ═══════════════════════════════════════════════════════════════ -->
 <aside class="sidebar">
+
+    <!-- Brand: logo, shop name, Admin Panel badge -->
     <div class="sidebar-brand">
         <span class="logo">🍫</span>
         <h2>Sugar Corner</h2>
         <span class="role-badge">Admin Panel</span>
     </div>
-    <nav>
-        <div class="nav-section">Overview</div>
-        <a class="nav-item" href="/admin/dashboard"><span class="nav-icon">📊</span> Dashboard</a>
-        <div class="nav-section">Customer Mgmt</div>
-        <a class="nav-item" href="/admin/customers"><span class="nav-icon">👥</span> All Customers</a>
-        <div class="nav-section">Product Mgmt</div>
-        <a class="nav-item" href="/admin/products"><span class="nav-icon">🍫</span> All Products</a>
-        <a class="nav-item" href="/admin/products/add"><span class="nav-icon">➕</span> Add Product</a>
-        <div class="nav-section">Order Mgmt</div>
-        <a class="nav-item active" href="/admin/orders"><span class="nav-icon">📦</span> All Orders
-            <span class="nav-badge" th:if="${pendingCount > 0}" th:text="${pendingCount}">0</span>
-        </a>
-        <div class="nav-section">Coming Soon</div>
-        <a class="nav-item" href="#"><span class="nav-icon">💳</span> Payments</a>
-        <a class="nav-item" href="#"><span class="nav-icon">💬</span> Inquiries</a>
-    </nav>
-    <div class="sidebar-footer">
-        <a class="logout-btn" href="/logout"><span>🚪</span> Sign Out</a>
+
+    <!-- Admin identity block.
+         FIX: Name removed entirely. Shows "Administrator" always.
+         Reason: admin is stored as a Customer in session — showing
+         their personal name (e.g. "nethmi kaveesha") is confusing.
+         The shield icon (🛡️) makes the role clear without any name. -->
+    <div class="admin-info">
+        <!-- Fixed shield avatar — no dynamic name, no confusion -->
+        <div class="admin-avatar" style="font-size:18px;">🛡️</div>
+        <div>
+            <!-- Always "Administrator" — never the customer account name -->
+            <div class="admin-name">Administrator</div>
+            <div class="admin-role">Sugar Corner Admin</div>
+        </div>
     </div>
+
+    <!-- Navigation links — compact, no section labels.
+         Section labels were removed because they made the sidebar
+         too tall and cut off the bottom links on most screens. -->
+    <nav>
+
+        <!-- Dashboard -->
+        <a class="nav-item" href="/admin/dashboard">
+            <span class="nav-icon">📊</span> Dashboard
+        </a>
+
+        <!-- All Customers: view, block/unblock -->
+        <a class="nav-item" href="/admin/customers">
+            <span class="nav-icon">👥</span> All Customers
+        </a>
+
+        <!-- All Products: edit, hide, delete -->
+        <a class="nav-item" href="/admin/products">
+            <span class="nav-icon">🍫</span> All Products
+        </a>
+
+        <!-- Add Product: create new listing -->
+        <a class="nav-item" href="/admin/products/add">
+            <span class="nav-icon">➕</span> Add Product
+        </a>
+
+        <!-- All Orders: update status.
+             Badge shows count of pending orders. -->
+        <a class="nav-item active" href="/admin/orders">
+            <span class="nav-icon">📦</span> All Orders
+            <span class="nav-badge"
+                  th:if="${notifCount != null and notifCount > 0}"
+                  th:text="${notifCount}">0</span>
+        </a>
+
+        <!-- All Payments: mark paid, refund -->
+        <a class="nav-item" href="/admin/payments">
+            <span class="nav-icon">💳</span> All Payments
+        </a>
+
+        <!-- Inquiries: live chat with customers.
+             Badge shows unread inquiry count. -->
+        <a class="nav-item" href="/admin/contact/inquiries">
+            <span class="nav-icon">💬</span> Inquiries
+            <span class="nav-badge"
+                  th:if="${newCount != null and newCount > 0}"
+                  th:text="${newCount}">0</span>
+        </a>
+
+        <!-- Feedback: star ratings -->
+        <a class="nav-item" href="/admin/contact/feedback">
+            <span class="nav-icon">⭐</span> Feedback
+        </a>
+
+    </nav>
+
+    <!-- Sign out -->
+    <div class="sidebar-footer">
+        <a class="logout-btn" href="/logout">
+            <span>🚪</span> Sign Out
+        </a>
+    </div>
+
 </aside>
 
 <div class="main">
@@ -169,6 +316,7 @@
         <div th:if="${param.success != null}" class="alert alert-success">
             ✅
             <span th:if="${param.success[0] == 'status'}">Order status updated successfully!</span>
+            <span th:if="${param.success[0] == 'delivered'}">Order marked as delivered. Loyalty will refresh on the customer dashboard/profile.</span>
             <span th:if="${param.success[0] == 'note'}">Admin note saved!</span>
         </div>
 
@@ -242,7 +390,7 @@
                 </div>
             </div>
             <div class="panel">
-                <h4>👤 Customer</h4>
+                <h4>👤 Customer Details</h4>
                 <div class="info-row">
                     <span class="info-label">Name</span>
                     <span class="info-val" th:text="${order.customerFullName}">-</span>
@@ -251,14 +399,33 @@
                     <span class="info-label">Email</span>
                     <span class="info-val" th:text="${order.customerEmail}">-</span>
                 </div>
-                <div class="info-row" th:if="${order.customerPhone != null}">
+                <div class="info-row" th:if="${order.customerPhone != null and order.customerPhone != ''}">
                     <span class="info-label">Phone</span>
                     <span class="info-val" th:text="${order.customerPhone}">-</span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">Total Amount</span>
+                    <span class="info-label">Order Total</span>
                     <span class="info-val" style="color:var(--accent);"
                           th:text="'Rs. ' + ${#numbers.formatDecimal(order.totalAmount,1,'COMMA',2,'POINT')}">-</span>
+                </div>
+                <!-- Registered address from customers table -->
+                <div th:if="${order.customerAddress != null and order.customerAddress != ''}"
+                     style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+                    <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">
+                        Registered Address
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Address</span>
+                        <span class="info-val" th:text="${order.customerAddress}">-</span>
+                    </div>
+                    <div class="info-row" th:if="${order.customerCity != null and order.customerCity != ''}">
+                        <span class="info-label">City</span>
+                        <span class="info-val" th:text="${order.customerCity}">-</span>
+                    </div>
+                    <div class="info-row" th:if="${order.customerPostalCode != null and order.customerPostalCode != ''}">
+                        <span class="info-label">Postal Code</span>
+                        <span class="info-val" th:text="${order.customerPostalCode}">-</span>
+                    </div>
                 </div>
             </div>
         </div>

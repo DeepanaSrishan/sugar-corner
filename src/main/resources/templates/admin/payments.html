@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Payments – Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <style>
+        :root {
+            --dark: #111; --dark2: #1a1a1a; --dark3: #222;
+            --accent: #C68642; --accent2: #8B4513; --gold: #D4A843;
+            --cream: #FDF6EC; --white: #fff; --muted: #888;
+            --sidebar-w: 260px;
+            --success: #51CF66; --error: #FF6B6B; --warning: #FFA94D;
+            --border: rgba(255,255,255,.07);
+        }
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:'DM Sans',sans-serif;background:#0f0f0f;color:#e8e0d8;display:flex;min-height:100vh;overflow-x:hidden;}
+        .sidebar{width:var(--sidebar-w);background:linear-gradient(175deg,var(--brown-dark),var(--brown-mid));
+            position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;padding:32px 0;z-index:100;}
+        .sidebar-brand{text-align:center;padding:0 24px 32px;border-bottom:1px solid rgba(255,255,255,.1);}
+        .sidebar-brand .logo{font-size:38px;display:block;margin-bottom:8px;}
+        .sidebar-brand h2{font-family:'Playfair Display',serif;color:var(--cream);font-size:1.3rem;}
+        .sidebar-brand small{color:var(--caramel);font-size:.75rem;letter-spacing:1px;text-transform:uppercase;}
+        nav{flex:1;padding:4px 14px;overflow-y:hidden;}
+        .nav-section{font-size:.68rem;letter-spacing:1.5px;text-transform:uppercase;color:rgba(253,246,236,.4);padding:14px 12px 5px;}
+        .nav-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;margin-bottom:3px;
+            color:rgba(253,246,236,.8);font-size:.87rem;text-decoration:none;transition:all .2s;}
+        .nav-item:hover,.nav-item.active{background:rgba(196,134,66,.25);color:var(--cream);}
+        .nav-icon{font-size:16px;width:20px;text-align:center;}
+        .sidebar-footer{padding:0 16px 16px;}
+        .logout-btn{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;
+            color:rgba(253,246,236,.6);font-size:.85rem;text-decoration:none;border:1px solid rgba(255,255,255,.1);transition:all .2s;}
+        .logout-btn:hover{background:rgba(192,57,43,.25);color:#FF8A80;}
+        .main{margin-left:var(--sidebar-w);flex:1;}
+        .topbar{background:var(--dark2);padding:18px 36px;border-bottom:1px solid var(--border);
+            display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;
+            box-shadow:0 2px 12px rgba(44,24,16,.06);}
+        .topbar h1{font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--brown-dark);}
+        .content{padding:28px 36px;}
+
+        /* Stats row */
+        .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:28px;}
+        .stat-card{background:var(--dark2);border-radius:16px;border:1px solid var(--border);padding:18px 22px;}
+        .stat-label{font-size:.75rem;color:var(--muted);letter-spacing:.5px;margin-bottom:6px;}
+        .stat-value{font-family:'Playfair Display',serif;font-size:1.6rem;color:var(--brown-dark);}
+        .stat-sub{font-size:.72rem;color:var(--muted);margin-top:3px;}
+
+        /* Search / filter bar */
+        .filter-bar{background:var(--dark2);border-radius:16px;border:1px solid var(--border);
+            padding:18px 22px;margin-bottom:22px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;}
+        .filter-group{display:flex;flex-direction:column;gap:5px;}
+        .filter-group label{font-size:.75rem;color:var(--muted);}
+        .filter-group input, .filter-group select{padding:8px 12px;border-radius:9px;
+            border:1px solid var(--border);font-family:'DM Sans',sans-serif;font-size:.85rem;
+            background:#0f0f0f;color:#e8e0d8;outline:none;}
+        .filter-group input:focus,.filter-group select:focus{border-color:var(--caramel);}
+        .btn-search{padding:9px 22px;background:var(--brown-warm);color:var(--cream);
+            border:none;border-radius:9px;font-size:.85rem;font-weight:500;cursor:pointer;
+            font-family:'DM Sans',sans-serif;transition:all .2s;align-self:flex-end;}
+        .btn-search:hover{background:var(--brown-mid);}
+        .btn-reset{padding:9px 16px;background:var(--border);color:var(--muted);
+            border:none;border-radius:9px;font-size:.85rem;cursor:pointer;
+            font-family:'DM Sans',sans-serif;transition:all .2s;align-self:flex-end;text-decoration:none;}
+        .btn-reset:hover{background:var(--caramel);color:var(--white);}
+
+        /* Status tabs */
+        .status-tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+        .tab{padding:7px 18px;border-radius:100px;font-size:.8rem;font-weight:500;cursor:pointer;
+            border:1.5px solid #E8D8C4;background:var(--dark2);color:var(--muted);transition:all .2s;
+            text-decoration:none;display:inline-block;}
+        .tab.active,.tab:hover{background:var(--brown-warm);color:var(--cream);border-color:var(--brown-warm);}
+
+        /* Table */
+        .table-wrap{background:var(--dark2);border-radius:18px;border:1px solid var(--border);overflow:hidden;}
+        table{width:100%;border-collapse:collapse;}
+        thead{background:var(--border);}
+        th{padding:12px 18px;text-align:left;font-size:.75rem;font-weight:600;
+            color:var(--brown-mid);letter-spacing:.5px;text-transform:uppercase;}
+        td{padding:14px 18px;border-bottom:1px solid var(--border);font-size:.85rem;vertical-align:middle;}
+        tr:last-child td{border-bottom:none;}
+        tr:hover td{background:rgba(253,246,236,.5);}
+
+        .status-chip{padding:4px 12px;border-radius:100px;font-size:.72rem;font-weight:600;white-space:nowrap;}
+        .status-green {background:rgba(39,174,96,.12);color:var(--success);}
+        .status-orange{background:rgba(230,126,34,.12);color:#E67E22;}
+        .status-blue  {background:rgba(41,128,185,.12);color:#2980B9;}
+        .status-red   {background:rgba(192,57,43,.12);color:var(--error);}
+        .status-grey  {background:rgba(0,0,0,.07);color:#666;}
+
+        .btn-view{padding:5px 14px;background:var(--border);color:var(--brown-warm);
+            border-radius:7px;text-decoration:none;font-size:.78rem;font-weight:500;transition:all .2s;}
+        .btn-view:hover{background:var(--caramel);color:var(--white);}
+
+        .empty-row td{text-align:center;padding:48px;color:var(--muted);}
+
+        @media(max-width:900px){.sidebar{display:none;}.main{margin-left:0;}}
+        @media(max-width:768px){.filter-bar{flex-direction:column;}.table-wrap{overflow-x:auto;}}
+
+        /* ── Admin profile card in sidebar ─────────────────────
+           These rules were missing from non-dashboard pages,
+           causing the admin-info block to render unstyled.      */
+        .admin-info { margin:16px 14px; background:rgba(196,134,66,.08);
+            border:1px solid rgba(196,134,66,.15); border-radius:13px;
+            padding:13px; display:flex; align-items:center; gap:11px; }
+        .admin-avatar { width:42px; height:42px; border-radius:50%;
+            background:linear-gradient(135deg,var(--accent2,#8B4513),var(--accent,#C68642));
+            display:flex; align-items:center; justify-content:center;
+            font-size:18px; color:#fff; font-weight:600; flex-shrink:0; }
+        .admin-name  { font-size:.88rem; color:var(--cream,#FDF6EC); font-weight:500; }
+        .admin-role  { font-size:.72rem; color:var(--accent,#C68642); margin-top:2px; }
+    </style>
+</head>
+<body>
+<!-- ═══════════════════════════════════════════════════════════════
+     ADMIN SIDEBAR — identical on every admin page
+     Only the "active" class changes per page to highlight current section.
+     All links use correct controller URL mappings:
+       /admin/dashboard         → AdminController   @GetMapping("/dashboard")
+       /admin/customers         → AdminController   @GetMapping("/customers")
+       /admin/products          → AdminProductController @GetMapping
+       /admin/products/add      → AdminProductController @GetMapping("/add")
+       /admin/orders            → AdminOrderController  @GetMapping
+       /admin/payments          → AdminPaymentController @GetMapping
+       /admin/contact/inquiries → AdminContactController @GetMapping("/inquiries")
+       /admin/contact/feedback  → AdminContactController @GetMapping("/feedback")
+       /logout                  → AuthController    @GetMapping("/logout")
+     ═══════════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════════════════════════
+     ADMIN SIDEBAR — same on every admin page.
+     Only the "active" class changes per page.
+
+     WHY THE ADMIN NAME WAS SHOWING WRONG:
+       - Only AdminController.dashboard() passed model.addAttribute("admin", ...)
+       - Other controllers (Orders, Payments, Contact) did NOT pass "admin"
+       - So th:text="${admin.firstName}" threw null on those pages
+       - FIX: All admin controllers now pass session "customer" as "admin"
+
+     SCROLLBAR REMOVED:
+       - nav element now uses overflow-y: hidden (was auto)
+       - All nav links fit in one screen without scrolling
+
+     LINKS MAP:
+       /admin/dashboard         → AdminController          dashboard()
+       /admin/customers         → AdminController          listCustomers()
+       /admin/products          → AdminProductController   listProducts()
+       /admin/products/add      → AdminProductController   addProductForm()
+       /admin/orders            → AdminOrderController     listOrders()
+       /admin/payments          → AdminPaymentController   listPayments()
+       /admin/contact/inquiries → AdminContactController   allInquiries()
+       /admin/contact/feedback  → AdminContactController   allFeedback()
+       /logout                  → AuthController           logout()
+     ═══════════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════════════════════════
+     ADMIN SIDEBAR — identical on every admin page.
+     The "active" class changes per page to highlight the current section.
+
+     FIXES APPLIED:
+     1. Admin profile avatar/name: uses correct Thymeleaf ternary syntax
+        (was: th:text="${cond} ? ${expr}" — INVALID, crashes SpEL)
+        (now: th:text="${cond} ? expr : 'fallback'" — correct)
+     2. Nav section labels removed — they took too much vertical space
+        causing bottom links (Inquiries, Feedback) to be cut off
+     3. Scrollbar removed from nav (overflow-y: hidden)
+
+     CONTROLLER REQUIREMENTS — every admin @GetMapping must call:
+        model.addAttribute("admin", session.getAttribute("customer"));
+        model.addAttribute("notifCount", orderService.getPendingOrderCount());
+     ═══════════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════════════════════════
+     ADMIN SIDEBAR — identical on every admin page.
+     Active class changes per page.
+
+     ADMIN NAME FIX:
+       The "admin" session attribute is a Customer object.
+       If the admin account is named "nethmi kaveesha", that name appears.
+       Fix: always show "Administrator" — never the customer name.
+       The avatar shows a fixed shield icon instead.
+
+     PRODUCT DELETE FIX:
+       ProductDAO.deleteById() now deletes order_items first, then products.
+       This prevents the FK constraint error from order_items.product_id.
+
+     MY-PAYMENTS FIX:
+       Template now uses p.status (not p.paymentStatus) to match
+       the actual Payment model field: private String status.
+     ═══════════════════════════════════════════════════════════════ -->
+<aside class="sidebar">
+
+    <!-- Brand: logo, shop name, Admin Panel badge -->
+    <div class="sidebar-brand">
+        <span class="logo">🍫</span>
+        <h2>Sugar Corner</h2>
+        <span class="role-badge">Admin Panel</span>
+    </div>
+
+    <!-- Admin identity block.
+         FIX: Name removed entirely. Shows "Administrator" always.
+         Reason: admin is stored as a Customer in session — showing
+         their personal name (e.g. "nethmi kaveesha") is confusing.
+         The shield icon (🛡️) makes the role clear without any name. -->
+    <div class="admin-info">
+        <!-- Fixed shield avatar — no dynamic name, no confusion -->
+        <div class="admin-avatar" style="font-size:18px;">🛡️</div>
+        <div>
+            <!-- Always "Administrator" — never the customer account name -->
+            <div class="admin-name">Administrator</div>
+            <div class="admin-role">Sugar Corner Admin</div>
+        </div>
+    </div>
+
+    <!-- Navigation links — compact, no section labels.
+         Section labels were removed because they made the sidebar
+         too tall and cut off the bottom links on most screens. -->
+    <nav>
+
+        <!-- Dashboard -->
+        <a class="nav-item" href="/admin/dashboard">
+            <span class="nav-icon">📊</span> Dashboard
+        </a>
+
+        <!-- All Customers: view, block/unblock -->
+        <a class="nav-item" href="/admin/customers">
+            <span class="nav-icon">👥</span> All Customers
+        </a>
+
+        <!-- All Products: edit, hide, delete -->
+        <a class="nav-item" href="/admin/products">
+            <span class="nav-icon">🍫</span> All Products
+        </a>
+
+        <!-- Add Product: create new listing -->
+        <a class="nav-item" href="/admin/products/add">
+            <span class="nav-icon">➕</span> Add Product
+        </a>
+
+        <!-- All Orders: update status.
+             Badge shows count of pending orders. -->
+        <a class="nav-item" href="/admin/orders">
+            <span class="nav-icon">📦</span> All Orders
+            <span class="nav-badge"
+                  th:if="${notifCount != null and notifCount > 0}"
+                  th:text="${notifCount}">0</span>
+        </a>
+
+        <!-- All Payments: mark paid, refund -->
+        <a class="nav-item active" href="/admin/payments">
+            <span class="nav-icon">💳</span> All Payments
+        </a>
+
+        <!-- Inquiries: live chat with customers.
+             Badge shows unread inquiry count. -->
+        <a class="nav-item" href="/admin/contact/inquiries">
+            <span class="nav-icon">💬</span> Inquiries
+            <span class="nav-badge"
+                  th:if="${newCount != null and newCount > 0}"
+                  th:text="${newCount}">0</span>
+        </a>
+
+        <!-- Feedback: star ratings -->
+        <a class="nav-item" href="/admin/contact/feedback">
+            <span class="nav-icon">⭐</span> Feedback
+        </a>
+
+    </nav>
+
+    <!-- Sign out -->
+    <div class="sidebar-footer">
+        <a class="logout-btn" href="/logout">
+            <span>🚪</span> Sign Out
+        </a>
+    </div>
+
+</aside>
+
+<div class="main">
+    <div class="topbar">
+        <h1>💳 Payment Management</h1>
+    </div>
+    <div class="content">
+
+        <!-- Stats -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-label">PENDING PAYMENTS</div>
+                <div class="stat-value" th:text="${pendingCount}">0</div>
+                <div class="stat-sub">Awaiting action</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">TODAY'S REVENUE</div>
+                <div class="stat-value">Rs. <span th:text="${#numbers.formatDecimal(todayRevenue,1,'COMMA',2,'POINT')}">0.00</span></div>
+                <div class="stat-sub">Completed payments today</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">TOTAL PAYMENTS</div>
+                <div class="stat-value" th:text="${#lists.size(payments)}">0</div>
+                <div class="stat-sub">All time records</div>
+            </div>
+        </div>
+
+        <!-- Search & Filter -->
+        <form class="filter-bar" th:action="@{/admin/payments}" method="get">
+            <div class="filter-group">
+                <label>Payment ID</label>
+                <input type="text" name="paymentId" placeholder="#123" th:value="${param.paymentId}"/>
+            </div>
+            <div class="filter-group">
+                <label>Date</label>
+                <input type="date" name="date" th:value="${param.date}"/>
+            </div>
+            <div class="filter-group">
+                <label>Status</label>
+                <select name="status">
+                    <option value="ALL">All Statuses</option>
+                    <option value="PENDING"   th:selected="${param.status == 'PENDING'}">⏳ Pending</option>
+                    <option value="COMPLETED" th:selected="${param.status == 'COMPLETED'}">✅ Completed</option>
+                    <option value="REFUNDED"  th:selected="${param.status == 'REFUNDED'}">↩️ Refunded</option>
+                    <option value="FAILED"    th:selected="${param.status == 'FAILED'}">❌ Failed</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-search">🔍 Search</button>
+            <a href="/admin/payments" class="btn-reset">✕ Reset</a>
+        </form>
+
+        <!-- Table -->
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Customer</th>
+                    <th>Order</th>
+                    <th>Amount</th>
+                    <th>Method</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(payments)}" class="empty-row">
+                    <td colspan="8">💳 No payment records found.</td>
+                </tr>
+                <tr th:each="p : ${payments}">
+                    <td style="font-family:'Playfair Display',serif;color:var(--brown-dark);"
+                        th:text="'#' + ${p.id}">#1</td>
+                    <td>
+                        <div style="font-weight:500;" th:text="${p.customerFullName}">Customer Name</div>
+                        <div style="font-size:.75rem;color:var(--muted);" th:text="${p.customerEmail}">email@example.com</div>
+                    </td>
+                    <td>
+                        <a th:href="'/admin/orders/' + ${p.orderId}"
+                           style="color:var(--brown-warm);text-decoration:none;font-weight:500;"
+                           th:text="'#' + ${p.orderId}">#1</a>
+                    </td>
+                    <td style="font-weight:600;"
+                        th:text="'Rs. ' + ${#numbers.formatDecimal(p.amount,1,'COMMA',2,'POINT')}">Rs. 0.00</td>
+                    <td th:text="${p.methodLabel}">Cash on Delivery</td>
+                    <td>
+                        <span class="status-chip"
+                              th:classappend="'status-' + ${p.statusColor}"
+                              th:text="${p.statusLabel}">Pending</span>
+                    </td>
+                    <td style="color:var(--muted);font-size:.78rem;"
+                        th:text="${#temporals.format(p.createdAt,'dd MMM yyyy')}">01 Jan 2025</td>
+                    <td>
+                        <a th:href="'/admin/payments/' + ${p.id}" class="btn-view">View →</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+</body>
+</html>

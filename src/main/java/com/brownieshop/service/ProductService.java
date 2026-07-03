@@ -60,6 +60,11 @@ public class ProductService {
         return productDAO.findAllCategories();
     }
 
+    /** Returns live stock count directly from DB — always accurate */
+    public int getStock(Long productId) {
+        return productDAO.getStock(productId);
+    }
+
     // ── Update ────────────────────────────────────────────────
     public void updateProduct(Product product, MultipartFile image) {
         productDAO.update(product);
@@ -103,4 +108,52 @@ public class ProductService {
         if (filename == null || !filename.contains(".")) return ".jpg";
         return filename.substring(filename.lastIndexOf('.'));
     }
+
+    // ── Auto-featured (popularity-based) ─────────────────────
+
+    /**
+     * Automatically marks the top N most-ordered products as featured,
+     * clearing featured from all others.
+     *
+     * Called by:
+     *   - AdminProductController when admin visits /admin/products
+     *   - AdminProductController POST /admin/products/auto-popular (manual trigger)
+     *
+     * Algorithm:
+     *   1. Query order_items to find products ordered most (by total qty)
+     *   2. Clear featured flag from ALL products
+     *   3. Set featured=true on the top-N products
+     *
+     * If no orders exist yet, nothing is featured automatically
+     * (admin can still set featured manually via the checkbox).
+     *
+     * @param topN  how many products to mark as featured (default: 4)
+     * @return      list of product IDs that were marked as featured
+     */
+    public List<Long> autoUpdateFeatured(int topN) {
+        List<Long> topIds = productDAO.getTopOrderedProductIds(topN);
+
+        if (topIds.isEmpty()) {
+            // No order data yet — leave featured as-is (admin controls manually)
+            return topIds;
+        }
+
+        // Clear all featured flags
+        productDAO.clearAllFeatured();
+
+        // Set featured=true on the top-N most ordered
+        for (Long id : topIds) {
+            productDAO.setFeatured(id, true);
+        }
+
+        return topIds;
+    }
+
+    /**
+     * Returns total ordered count for a product (for display in admin list).
+     */
+    public int getOrderedCount(Long productId) {
+        return productDAO.getOrderedCount(productId);
+    }
+
 }

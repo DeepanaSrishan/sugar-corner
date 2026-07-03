@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Payment Detail – Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <style>
+        :root {
+            --dark: #111; --dark2: #1a1a1a; --dark3: #222;
+            --accent: #C68642; --accent2: #8B4513; --gold: #D4A843;
+            --cream: #FDF6EC; --white: #fff; --muted: #888;
+            --sidebar-w: 260px;
+            --success: #51CF66; --error: #FF6B6B; --warning: #FFA94D;
+            --border: rgba(255,255,255,.07);
+        }
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:'DM Sans',sans-serif;background:#0f0f0f;color:#e8e0d8;display:flex;min-height:100vh;overflow-x:hidden;}
+        .sidebar{width:var(--sidebar-w);background:linear-gradient(175deg,var(--brown-dark),var(--brown-mid));
+            position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;padding:32px 0;z-index:100;}
+        .sidebar-brand{text-align:center;padding:0 24px 32px;border-bottom:1px solid rgba(255,255,255,.1);}
+        .sidebar-brand .logo{font-size:38px;display:block;margin-bottom:8px;}
+        .sidebar-brand h2{font-family:'Playfair Display',serif;color:var(--cream);font-size:1.3rem;}
+        .sidebar-brand small{color:var(--caramel);font-size:.75rem;letter-spacing:1px;text-transform:uppercase;}
+        nav{flex:1;padding:4px 14px;overflow-y:hidden;}
+        .nav-section{font-size:.68rem;letter-spacing:1.5px;text-transform:uppercase;color:rgba(253,246,236,.4);padding:14px 12px 5px;}
+        .nav-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;margin-bottom:3px;
+            color:rgba(253,246,236,.8);font-size:.87rem;text-decoration:none;transition:all .2s;}
+        .nav-item:hover,.nav-item.active{background:rgba(196,134,66,.25);color:var(--cream);}
+        .nav-icon{font-size:16px;width:20px;text-align:center;}
+        .sidebar-footer{padding:0 16px 16px;}
+        .logout-btn{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;
+            color:rgba(253,246,236,.6);font-size:.85rem;text-decoration:none;border:1px solid rgba(255,255,255,.1);transition:all .2s;}
+        .logout-btn:hover{background:rgba(192,57,43,.25);color:#FF8A80;}
+        .main{margin-left:var(--sidebar-w);flex:1;}
+        .topbar{background:var(--dark2);padding:18px 36px;border-bottom:1px solid var(--border);
+            display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50;
+            box-shadow:0 2px 12px rgba(44,24,16,.06);}
+        .topbar a{color:var(--muted);text-decoration:none;font-size:.9rem;}
+        .topbar a:hover{color:var(--brown-warm);}
+        .topbar h1{font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--brown-dark);}
+        .content{padding:32px 36px;max-width:800px;}
+
+        /* Alert banners */
+        .alert{padding:14px 18px;border-radius:12px;font-size:.875rem;margin-bottom:20px;display:flex;align-items:center;gap:10px;}
+        .alert-success{background:rgba(39,174,96,.1);border:1px solid rgba(39,174,96,.25);color:#1A7A40;}
+        .alert-info{background:rgba(41,128,185,.1);border:1px solid rgba(41,128,185,.25);color:#154F7A;}
+
+        /* Cards */
+        .card{background:var(--dark2);border-radius:18px;border:1px solid var(--border);padding:24px;margin-bottom:20px;}
+        .card h3{font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--brown-dark);
+            margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+        .detail-row{display:flex;justify-content:space-between;align-items:center;
+            padding:10px 0;border-bottom:1px solid rgba(0,0,0,.04);font-size:.875rem;}
+        .detail-row:last-child{border-bottom:none;}
+        .detail-label{color:var(--muted);}
+        .detail-value{font-weight:500;text-align:right;}
+
+        /* Status chip */
+        .status-chip{padding:5px 16px;border-radius:100px;font-size:.75rem;font-weight:600;}
+        .status-green {background:rgba(39,174,96,.12);color:var(--success);}
+        .status-orange{background:rgba(230,126,34,.12);color:#E67E22;}
+        .status-blue  {background:rgba(41,128,185,.12);color:#2980B9;}
+        .status-red   {background:rgba(192,57,43,.12);color:var(--error);}
+
+        /* Amount highlight */
+        .amount-big{font-family:'Playfair Display',serif;font-size:2rem;color:var(--brown-dark);
+            text-align:center;padding:20px;background:#0f0f0f;border-radius:12px;margin-bottom:16px;}
+        .amount-big small{display:block;font-size:.8rem;color:var(--muted);font-family:'DM Sans',sans-serif;margin-top:4px;}
+
+        /* Action buttons */
+        .action-grid{display:grid;gap:12px;}
+        .btn-complete{width:100%;padding:14px;background:var(--success);color:var(--white);
+            border:none;border-radius:12px;font-size:.95rem;font-weight:600;cursor:pointer;
+            font-family:'DM Sans',sans-serif;transition:all .2s;}
+        .btn-complete:hover{background:#1E8B4A;transform:translateY(-1px);}
+        .btn-refund{width:100%;padding:14px;background:transparent;color:var(--error);
+            border:2px solid var(--error);border-radius:12px;font-size:.95rem;font-weight:600;cursor:pointer;
+            font-family:'DM Sans',sans-serif;transition:all .2s;}
+        .btn-refund:hover{background:var(--error);color:var(--white);}
+        .btn-back{display:inline-block;padding:10px 22px;background:var(--border);color:var(--brown-warm);
+            border-radius:10px;text-decoration:none;font-size:.875rem;font-weight:500;transition:all .2s;margin-top:8px;}
+        .btn-back:hover{background:var(--caramel);color:var(--white);}
+
+        /* Refund modal overlay */
+        .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;
+            align-items:center;justify-content:center;}
+        .modal-overlay.open{display:flex;}
+        .modal{background:var(--dark2);border-radius:20px;padding:32px;width:420px;max-width:90vw;}
+        .modal h3{font-family:'Playfair Display',serif;color:var(--brown-dark);margin-bottom:14px;}
+        .modal p{font-size:.875rem;color:var(--muted);margin-bottom:16px;}
+        .modal textarea{width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border);
+            font-family:'DM Sans',sans-serif;font-size:.875rem;resize:vertical;min-height:80px;
+            background:#0f0f0f;color:#e8e0d8;outline:none;}
+        .modal textarea:focus{border-color:var(--caramel);}
+        .modal-actions{display:flex;gap:10px;margin-top:16px;}
+        .btn-confirm-refund{flex:1;padding:12px;background:var(--error);color:var(--white);
+            border:none;border-radius:10px;font-size:.9rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;}
+        .btn-cancel-modal{flex:1;padding:12px;background:var(--border);color:var(--muted);
+            border:none;border-radius:10px;font-size:.9rem;cursor:pointer;font-family:'DM Sans',sans-serif;}
+
+        @media(max-width:900px){.sidebar{display:none;}.main{margin-left:0;}}
+        @media(max-width:580px){.content{padding:20px;}}
+
+        /* ── Admin profile card in sidebar ─────────────────────
+           These rules were missing from non-dashboard pages,
+           causing the admin-info block to render unstyled.      */
+        .admin-info { margin:16px 14px; background:rgba(196,134,66,.08);
+            border:1px solid rgba(196,134,66,.15); border-radius:13px;
+            padding:13px; display:flex; align-items:center; gap:11px; }
+        .admin-avatar { width:42px; height:42px; border-radius:50%;
+            background:linear-gradient(135deg,var(--accent2,#8B4513),var(--accent,#C68642));
+            display:flex; align-items:center; justify-content:center;
+            font-size:18px; color:#fff; font-weight:600; flex-shrink:0; }
+        .admin-name  { font-size:.88rem; color:var(--cream,#FDF6EC); font-weight:500; }
+        .admin-role  { font-size:.72rem; color:var(--accent,#C68642); margin-top:2px; }
+    </style>
+</head>
+<body>
+<!-- ═══════════════════════════════════════════════════════════════
+     ADMIN SIDEBAR — identical on every admin page
+     Only the "active" class changes per page to highlight current section.
+     All links use correct controller URL mappings:
+       /admin/dashboard         → AdminController   @GetMapping("/dashboard")
+       /admin/customers         → AdminController   @GetMapping("/customers")
+       /admin/products          → AdminProductController @GetMapping
+       /admin/products/add      → AdminProductController @GetMapping("/add")
+       /admin/orders            → AdminOrderController  @GetMapping
+       /admin/payments          → AdminPaymentController @GetMapping
+       /admin/contact/inquiries → AdminContactController @GetMapping("/inquiries")
+       /admin/contact/feedback  → AdminContactController @GetMapping("/feedback")
+       /logout                  → AuthController    @GetMapping("/logout")
+     ═══════════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════════════════════════
+     ADMIN SIDEBAR — same on every admin page.
+     Only the "active" class changes per page.
+
+     WHY THE ADMIN NAME WAS SHOWING WRONG:
+       - Only AdminController.dashboard() passed model.addAttribute("admin", ...)
+       - Other controllers (Orders, Payments, Contact) did NOT pass "admin"
+       - So th:text="${admin.firstName}" threw null on those pages
+       - FIX: All admin controllers now pass session "customer" as "admin"
+
+     SCROLLBAR REMOVED:
+       - nav element now uses overflow-y: hidden (was auto)
+       - All nav links fit in one screen without scrolling
+
+     LINKS MAP:
+       /admin/dashboard         → AdminController          dashboard()
+       /admin/customers         → AdminController          listCustomers()
+       /admin/products          → AdminProductController   listProducts()
+       /admin/products/add      → AdminProductController   addProductForm()
+       /admin/orders            → AdminOrderController     listOrders()
+       /admin/payments          → AdminPaymentController   listPayments()
+       /admin/contact/inquiries → AdminContactController   allInquiries()
+       /admin/contact/feedback  → AdminContactController   allFeedback()
+       /logout                  → AuthController           logout()
+     ═══════════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════════════════════════
+     ADMIN SIDEBAR — identical on every admin page.
+     The "active" class changes per page to highlight the current section.
+
+     FIXES APPLIED:
+     1. Admin profile avatar/name: uses correct Thymeleaf ternary syntax
+        (was: th:text="${cond} ? ${expr}" — INVALID, crashes SpEL)
+        (now: th:text="${cond} ? expr : 'fallback'" — correct)
+     2. Nav section labels removed — they took too much vertical space
+        causing bottom links (Inquiries, Feedback) to be cut off
+     3. Scrollbar removed from nav (overflow-y: hidden)
+
+     CONTROLLER REQUIREMENTS — every admin @GetMapping must call:
+        model.addAttribute("admin", session.getAttribute("customer"));
+        model.addAttribute("notifCount", orderService.getPendingOrderCount());
+     ═══════════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════════════════════════
+     ADMIN SIDEBAR — identical on every admin page.
+     Active class changes per page.
+
+     ADMIN NAME FIX:
+       The "admin" session attribute is a Customer object.
+       If the admin account is named "nethmi kaveesha", that name appears.
+       Fix: always show "Administrator" — never the customer name.
+       The avatar shows a fixed shield icon instead.
+
+     PRODUCT DELETE FIX:
+       ProductDAO.deleteById() now deletes order_items first, then products.
+       This prevents the FK constraint error from order_items.product_id.
+
+     MY-PAYMENTS FIX:
+       Template now uses p.status (not p.paymentStatus) to match
+       the actual Payment model field: private String status.
+     ═══════════════════════════════════════════════════════════════ -->
+<aside class="sidebar">
+
+    <!-- Brand: logo, shop name, Admin Panel badge -->
+    <div class="sidebar-brand">
+        <span class="logo">🍫</span>
+        <h2>Sugar Corner</h2>
+        <span class="role-badge">Admin Panel</span>
+    </div>
+
+    <!-- Admin identity block.
+         FIX: Name removed entirely. Shows "Administrator" always.
+         Reason: admin is stored as a Customer in session — showing
+         their personal name (e.g. "nethmi kaveesha") is confusing.
+         The shield icon (🛡️) makes the role clear without any name. -->
+    <div class="admin-info">
+        <!-- Fixed shield avatar — no dynamic name, no confusion -->
+        <div class="admin-avatar" style="font-size:18px;">🛡️</div>
+        <div>
+            <!-- Always "Administrator" — never the customer account name -->
+            <div class="admin-name">Administrator</div>
+            <div class="admin-role">Sugar Corner Admin</div>
+        </div>
+    </div>
+
+    <!-- Navigation links — compact, no section labels.
+         Section labels were removed because they made the sidebar
+         too tall and cut off the bottom links on most screens. -->
+    <nav>
+
+        <!-- Dashboard -->
+        <a class="nav-item" href="/admin/dashboard">
+            <span class="nav-icon">📊</span> Dashboard
+        </a>
+
+        <!-- All Customers: view, block/unblock -->
+        <a class="nav-item" href="/admin/customers">
+            <span class="nav-icon">👥</span> All Customers
+        </a>
+
+        <!-- All Products: edit, hide, delete -->
+        <a class="nav-item" href="/admin/products">
+            <span class="nav-icon">🍫</span> All Products
+        </a>
+
+        <!-- Add Product: create new listing -->
+        <a class="nav-item" href="/admin/products/add">
+            <span class="nav-icon">➕</span> Add Product
+        </a>
+
+        <!-- All Orders: update status.
+             Badge shows count of pending orders. -->
+        <a class="nav-item" href="/admin/orders">
+            <span class="nav-icon">📦</span> All Orders
+            <span class="nav-badge"
+                  th:if="${notifCount != null and notifCount > 0}"
+                  th:text="${notifCount}">0</span>
+        </a>
+
+        <!-- All Payments: mark paid, refund -->
+        <a class="nav-item active" href="/admin/payments">
+            <span class="nav-icon">💳</span> All Payments
+        </a>
+
+        <!-- Inquiries: live chat with customers.
+             Badge shows unread inquiry count. -->
+        <a class="nav-item" href="/admin/contact/inquiries">
+            <span class="nav-icon">💬</span> Inquiries
+            <span class="nav-badge"
+                  th:if="${newCount != null and newCount > 0}"
+                  th:text="${newCount}">0</span>
+        </a>
+
+        <!-- Feedback: star ratings -->
+        <a class="nav-item" href="/admin/contact/feedback">
+            <span class="nav-icon">⭐</span> Feedback
+        </a>
+
+    </nav>
+
+    <!-- Sign out -->
+    <div class="sidebar-footer">
+        <a class="logout-btn" href="/logout">
+            <span>🚪</span> Sign Out
+        </a>
+    </div>
+
+</aside>
+
+<div class="main">
+    <div class="topbar">
+        <a href="/admin/payments">← Payments</a>
+        <span style="color:var(--border);">/</span>
+        <h1 th:text="'Payment #' + ${payment.id}">Payment #1</h1>
+    </div>
+    <div class="content">
+
+        <!-- Success alerts -->
+        <div class="alert alert-success" th:if="${param.success == 'completed'}">
+            ✅ Payment marked as completed successfully.
+        </div>
+        <div class="alert alert-info" th:if="${param.success == 'refunded'}">
+            ↩️ Refund processed successfully.
+        </div>
+
+        <!-- Amount highlight -->
+        <div class="amount-big">
+            Rs. <span th:text="${#numbers.formatDecimal(payment.amount,1,'COMMA',2,'POINT')}">0.00</span>
+            <small th:text="${payment.methodLabel}">Cash on Delivery</small>
+        </div>
+
+        <!-- Payment Info -->
+        <div class="card">
+            <h3>💳 Payment Information</h3>
+            <div class="detail-row">
+                <span class="detail-label">Payment ID</span>
+                <span class="detail-value" th:text="'#' + ${payment.id}">#1</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Linked Order</span>
+                <span class="detail-value">
+                    <a th:href="'/admin/orders/' + ${payment.orderId}"
+                       style="color:var(--brown-warm);text-decoration:none;"
+                       th:text="'Order #' + ${payment.orderId}">Order #1</a>
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Payment Method</span>
+                <span class="detail-value" th:text="${payment.methodLabel}">Cash on Delivery</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Status</span>
+                <span class="status-chip"
+                      th:classappend="'status-' + ${payment.statusColor}"
+                      th:text="${payment.statusLabel}">Pending</span>
+            </div>
+            <div class="detail-row" th:if="${payment.transactionRef != null}">
+                <span class="detail-label">Transaction Ref</span>
+                <span class="detail-value" th:text="${payment.transactionRef}">—</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Created</span>
+                <span class="detail-value"
+                      th:text="${#temporals.format(payment.createdAt,'dd MMM yyyy, hh:mm a')}">—</span>
+            </div>
+            <div class="detail-row" th:if="${payment.paidAt != null}">
+                <span class="detail-label">Paid At</span>
+                <span class="detail-value"
+                      th:text="${#temporals.format(payment.paidAt,'dd MMM yyyy, hh:mm a')}">—</span>
+            </div>
+            <div class="detail-row" th:if="${payment.notes != null and !#strings.isEmpty(payment.notes)}">
+                <span class="detail-label">Notes</span>
+                <span class="detail-value" th:text="${payment.notes}">—</span>
+            </div>
+        </div>
+
+        <!-- Customer Info -->
+        <div class="card">
+            <h3>👤 Customer</h3>
+            <div class="detail-row">
+                <span class="detail-label">Name</span>
+                <span class="detail-value" th:text="${payment.customerFullName}">—</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Email</span>
+                <span class="detail-value" th:text="${payment.customerEmail}">—</span>
+            </div>
+        </div>
+
+        <!-- Admin Actions -->
+        <div class="card">
+            <h3>⚙️ Admin Actions</h3>
+            <div class="action-grid">
+                <!-- Mark Complete — only for PENDING COD -->
+                <form th:if="${payment.status == 'PENDING' and payment.paymentMethod == 'CASH_ON_DELIVERY'}"
+                      th:action="@{'/admin/payments/' + ${payment.id} + '/complete'}" method="post">
+                    <button type="submit" class="btn-complete">
+                        ✅ Mark as Completed (Cash Received)
+                    </button>
+                </form>
+
+                <!-- Refund — only for COMPLETED -->
+                <button th:if="${payment.status == 'COMPLETED'}"
+                        class="btn-refund" onclick="openRefundModal()">
+                    ↩️ Process Refund
+                </button>
+
+                <!-- Already refunded / failed -->
+                <div th:if="${payment.status == 'REFUNDED'}"
+                     style="text-align:center;padding:12px;background:rgba(41,128,185,.08);
+                            border-radius:10px;color:#2980B9;font-size:.875rem;">
+                    ↩️ This payment has been refunded.
+                </div>
+                <div th:if="${payment.status == 'FAILED'}"
+                     style="text-align:center;padding:12px;background:rgba(192,57,43,.08);
+                            border-radius:10px;color:var(--error);font-size:.875rem;">
+                    ❌ This payment failed. No action required.
+                </div>
+            </div>
+        </div>
+
+        <a href="/admin/payments" class="btn-back">← Back to Payments</a>
+
+    </div>
+</div>
+
+<!-- Refund Modal -->
+<div class="modal-overlay" id="refundModal">
+    <div class="modal">
+        <h3>↩️ Process Refund</h3>
+        <p>This will mark the payment as refunded. Please provide a reason for the refund record.</p>
+        <form th:action="@{'/admin/payments/' + ${payment.id} + '/refund'}" method="post">
+            <textarea name="reason" placeholder="Reason for refund (e.g. customer request, damaged item…)"></textarea>
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel-modal" onclick="closeRefundModal()">Cancel</button>
+                <button type="submit" class="btn-confirm-refund">Confirm Refund</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openRefundModal()  { document.getElementById('refundModal').classList.add('open'); }
+    function closeRefundModal() { document.getElementById('refundModal').classList.remove('open'); }
+    document.getElementById('refundModal').addEventListener('click', function(e) {
+        if (e.target === this) closeRefundModal();
+    });
+</script>
+</body>
+</html>

@@ -21,8 +21,14 @@
         .role-badge{display:inline-block;margin-top:6px;padding:3px 12px;
             background:rgba(196,134,66,.2);color:var(--accent);border:1px solid rgba(196,134,66,.3);
             border-radius:100px;font-size:.7rem;letter-spacing:1px;text-transform:uppercase;}
-        nav{flex:1;padding:8px 16px;overflow-y:auto;}
-        .nav-section{font-size:.65rem;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.25);padding:16px 12px 6px;}
+        .admin-info{margin:20px 16px;background:rgba(196,134,66,.08);
+            border:1px solid rgba(196,134,66,.15);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;}
+        .admin-avatar{width:42px;height:42px;border-radius:50%;
+            background:linear-gradient(135deg,var(--accent2),var(--accent));
+            display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;font-weight:600;flex-shrink:0;}
+        .admin-name{font-size:.88rem;color:var(--cream);font-weight:500;}
+        .admin-role{font-size:.72rem;color:var(--accent);}
+        nav{flex:1;padding:4px 14px;overflow-y:hidden;}
         .nav-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;margin-bottom:3px;
             color:rgba(255,255,255,.55);font-size:.86rem;text-decoration:none;transition:all .2s;}
         .nav-item:hover,.nav-item.active{background:rgba(196,134,66,.15);color:var(--cream);}
@@ -41,27 +47,15 @@
         .topbar-left a:hover{color:var(--accent);}
         .topbar-left .sep{color:var(--muted);}
         .topbar h1{font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--cream);}
-        .notif-wrap{position:relative;display:inline-block;}
-        .notif-btn{width:38px;height:38px;border-radius:10px;background:rgba(196,134,66,.15);
-            border:1px solid rgba(196,134,66,.2);display:flex;align-items:center;justify-content:center;font-size:16px;}
-        .notif-dot{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;border-radius:100px;
-            background:#FF6B6B;color:white;font-size:.65rem;font-weight:700;
-            display:flex;align-items:center;justify-content:center;padding:0 4px;}
         .content{padding:28px 36px;}
-
-        /* Notification banner */
         .notif-banner{background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.2);
             border-radius:12px;padding:14px 18px;margin-bottom:20px;
             display:flex;align-items:center;gap:10px;font-size:.875rem;color:#FF8A80;}
         .notif-banner strong{color:#FF6B6B;}
-
-        /* Stats strip */
         .stats-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px;}
         .stat-mini{background:var(--dark2);border-radius:12px;border:1px solid var(--border);padding:16px 18px;}
         .stat-mini-num{font-family:'Playfair Display',serif;font-size:1.8rem;color:var(--cream);}
         .stat-mini-label{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
-
-        /* Search bar */
         .search-bar{background:var(--dark2);border-radius:14px;border:1px solid var(--border);
             padding:18px 22px;margin-bottom:20px;display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;}
         .search-field{display:flex;flex-direction:column;gap:6px;flex:1;min-width:160px;}
@@ -77,8 +71,6 @@
             border:1px solid var(--border);border-radius:9px;font-family:inherit;font-size:.875rem;
             text-decoration:none;display:flex;align-items:center;transition:all .2s;}
         .btn-clear-s:hover{border-color:rgba(196,134,66,.3);color:var(--accent);}
-
-        /* Table */
         .table-wrap{background:var(--dark2);border-radius:16px;border:1px solid var(--border);overflow:hidden;}
         table{width:100%;border-collapse:collapse;}
         thead th{padding:13px 16px;text-align:left;font-size:.7rem;font-weight:500;letter-spacing:1px;
@@ -87,11 +79,10 @@
         tbody tr:last-child{border-bottom:none;}
         tbody tr:hover{background:rgba(196,134,66,.04);}
         td{padding:13px 16px;font-size:.875rem;vertical-align:middle;}
-
         .customer-cell .c-name{font-weight:500;color:var(--cream);}
         .customer-cell .c-email{font-size:.75rem;color:var(--muted);}
         .items-cell{font-size:.78rem;color:rgba(255,255,255,.6);max-width:180px;}
-
+        /* FIX 3: chip CSS — colours defined so classappend works */
         .chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:100px;font-size:.72rem;font-weight:600;}
         .chip-orange{background:rgba(230,126,34,.15);color:#E67E22;}
         .chip-blue  {background:rgba(41,128,185,.15);color:#2980B9;}
@@ -100,42 +91,49 @@
         .chip-green {background:rgba(81,207,102,.12);color:var(--success);}
         .chip-red   {background:rgba(255,107,107,.12);color:var(--error);}
         .chip-grey  {background:rgba(255,255,255,.07);color:var(--muted);}
-
         .btn-sm{padding:5px 14px;border-radius:7px;font-family:inherit;font-size:.76rem;font-weight:500;
             cursor:pointer;border:none;transition:all .18s;text-decoration:none;display:inline-flex;align-items:center;}
         .btn-view{background:rgba(196,134,66,.15);color:var(--accent);}
         .btn-view:hover{background:rgba(196,134,66,.28);}
-
+        .btn-delivered{background:rgba(81,207,102,.15);color:var(--success);margin-left:8px;}
+        .btn-delivered:hover{background:rgba(81,207,102,.28);}
         .empty-state{text-align:center;padding:56px 20px;}
         .empty-state .icon{font-size:44px;margin-bottom:10px;}
         .empty-state p{color:var(--muted);font-size:.9rem;}
-
         @media(max-width:900px){.sidebar{display:none;}.main{margin-left:0;}}
         @media(max-width:640px){.content{padding:16px;}.stats-strip{grid-template-columns:1fr 1fr;}}
     </style>
 </head>
 <body>
+
 <aside class="sidebar">
     <div class="sidebar-brand">
         <span class="logo">🍫</span>
         <h2>Sugar Corner</h2>
         <span class="role-badge">Admin Panel</span>
     </div>
+    <div class="admin-info">
+        <div class="admin-avatar" style="font-size:18px;">🛡️</div>
+        <div>
+            <div class="admin-name">Administrator</div>
+            <div class="admin-role">Sugar Corner Admin</div>
+        </div>
+    </div>
     <nav>
-        <div class="nav-section">Overview</div>
         <a class="nav-item" href="/admin/dashboard"><span class="nav-icon">📊</span> Dashboard</a>
-        <div class="nav-section">Customer Mgmt</div>
         <a class="nav-item" href="/admin/customers"><span class="nav-icon">👥</span> All Customers</a>
-        <div class="nav-section">Product Mgmt</div>
         <a class="nav-item" href="/admin/products"><span class="nav-icon">🍫</span> All Products</a>
         <a class="nav-item" href="/admin/products/add"><span class="nav-icon">➕</span> Add Product</a>
-        <div class="nav-section">Order Mgmt</div>
+        <!-- FIX 5: badge uses notifCount (new orders only) not pendingCount (all pending) -->
         <a class="nav-item active" href="/admin/orders"><span class="nav-icon">📦</span> All Orders
-            <span class="nav-badge" th:if="${pendingCount > 0}" th:text="${pendingCount}">0</span>
+            <span class="nav-badge" th:if="${notifCount != null and notifCount > 0}" th:text="${notifCount}">0</span>
         </a>
-        <div class="nav-section">Coming Soon</div>
-        <a class="nav-item" href="#"><span class="nav-icon">💳</span> Payments</a>
-        <a class="nav-item" href="#"><span class="nav-icon">💬</span> Inquiries</a>
+        <a class="nav-item" href="/admin/payments"><span class="nav-icon">💳</span> All Payments</a>
+        <a class="nav-item" href="/admin/contact/inquiries">
+            <span class="nav-icon">💬</span> Inquiries
+            <span class="nav-badge" th:if="${newCount != null and newCount > 0}" th:text="${newCount}">0</span>
+        </a>
+        <a class="nav-item" href="/admin/contact/feedback"><span class="nav-icon">⭐</span> Feedback</a>
     </nav>
     <div class="sidebar-footer">
         <a class="logout-btn" href="/logout"><span>🚪</span> Sign Out</a>
@@ -143,26 +141,112 @@
 </aside>
 
 <div class="main">
+
+    <!-- FIX 4: topbar is a self-contained div — script moved OUTSIDE below -->
     <div class="topbar">
         <div class="topbar-left">
             <a href="/admin/dashboard">Dashboard</a>
             <span class="sep">›</span>
             <h1>Orders</h1>
         </div>
-        <div class="notif-wrap">
-            <div class="notif-btn">🔔</div>
-            <div class="notif-dot" th:if="${pendingCount > 0}" th:text="${pendingCount}">0</div>
-        </div>
-    </div>
+
+        <!-- NOTIFICATION BELL -->
+        <div style="position:relative;display:inline-block;" id="notifWrap">
+            <button id="notifBell"
+                    onclick="toggleNotifPanel(event)"
+                    style="width:40px;height:40px;border-radius:11px;border:none;cursor:pointer;
+                           background:rgba(196,134,66,.15);font-size:18px;display:flex;
+                           align-items:center;justify-content:center;position:relative;transition:background .2s;"
+                    onmouseover="this.style.background='rgba(196,134,66,.3)'"
+                    onmouseout="this.style.background='rgba(196,134,66,.15)'">
+                🔔
+                <!-- FIX 5: badge uses notifCount (new orders only, above watermark) -->
+                <span id="notifBadge"
+                      th:if="${notifCount != null and notifCount > 0}"
+                      th:text="${notifCount}"
+                      style="position:absolute;top:-5px;right:-5px;min-width:19px;height:19px;
+                             border-radius:100px;background:#FF4757;color:#fff;font-size:.62rem;
+                             font-weight:700;display:flex;align-items:center;justify-content:center;
+                             padding:0 4px;border:2px solid #1a1a1a;pointer-events:none;">0</span>
+            </button>
+
+            <div id="notifPanel"
+                 style="display:none;position:absolute;top:50px;right:0;width:340px;
+                        background:#1a1a1a;border-radius:16px;border:1px solid rgba(255,255,255,.1);
+                        box-shadow:0 20px 60px rgba(0,0,0,.5);z-index:500;overflow:hidden;">
+                <div style="padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.08);
+                            display:flex;align-items:center;justify-content:space-between;">
+                    <div>
+                        <span style="color:#FDF6EC;font-size:.9rem;font-weight:600;">🔔 New Orders</span>
+                        <span id="panelCount"
+                              style="font-size:.75rem;color:#FF8A80;margin-left:6px;"
+                              th:text="${notifCount != null and notifCount > 0} ? '(' + ${notifCount} + ' new)' : '(all read)'">(0 new)</span>
+                    </div>
+                    <button onclick="markAllRead()"
+                            style="padding:5px 12px;background:rgba(255,255,255,.08);
+                                   border:1px solid rgba(255,255,255,.12);border-radius:8px;
+                                   color:rgba(253,246,236,.7);font-size:.73rem;cursor:pointer;
+                                   transition:all .2s;font-family:inherit;"
+                            onmouseover="this.style.background='rgba(39,174,96,.2)';this.style.color='#51CF66'"
+                            onmouseout="this.style.background='rgba(255,255,255,.08)';this.style.color='rgba(253,246,236,.7)'">
+                        ✅ Mark all read
+                    </button>
+                </div>
+
+                <div style="max-height:320px;overflow-y:auto;" id="notifList">
+                    <!-- FIX 1: "No new orders" only shown when newOrdersList is empty -->
+                    <div
+                            style="padding:28px;text-align:center;color:rgba(253,246,236,.4);font-size:.83rem;">
+                        ✅ No new orders
+                    </div>
+
+                    <!-- One row per NEW order (above DB watermark) -->
+                    <div th:each="o : ${newOrdersList}"
+                         style="padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.05);
+                                display:flex;align-items:center;justify-content:space-between;gap:12px;
+                                transition:background .15s;cursor:pointer;"
+                         th:onclick="'window.location=\'/admin/orders/' + ${o.id} + '\''"
+                         onmouseover="this.style.background='rgba(255,255,255,.05)'"
+                         onmouseout="this.style.background='transparent'">
+                        <div style="flex:1;min-width:0;">
+                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+                                <span style="font-size:.78rem;font-weight:700;color:#FFA94D;">
+                                    #<span th:text="${o.id}">1</span>
+                                </span>
+                                <span style="font-size:.75rem;color:rgba(253,246,236,.7);
+                                             white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
+                                      th:text="${o.customerFullName}">Customer</span>
+                            </div>
+                            <div style="font-size:.7rem;color:rgba(253,246,236,.38);"
+                                 th:text="${o.createdAt != null ? #temporals.format(o.createdAt,'dd MMM yyyy · hh:mm a') : '–'}">
+                                01 Jan · 10:30 AM
+                            </div>
+                        </div>
+                        <div style="text-align:right;flex-shrink:0;">
+                            <div style="font-size:.82rem;font-weight:600;color:#FDF6EC;"
+                                 th:text="'Rs. ' + ${#numbers.formatDecimal(o.totalAmount,1,'COMMA',0,'POINT')}">Rs. 0</div>
+                            <span style="font-size:.65rem;padding:2px 8px;border-radius:100px;
+                                         background:rgba(255,169,77,.18);color:#FFA94D;font-weight:600;">NEW</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="padding:10px 18px;border-top:1px solid rgba(255,255,255,.06);text-align:center;">
+                    <a href="/admin/orders" style="font-size:.78rem;color:#C68642;text-decoration:none;font-weight:500;">
+                        View all orders →
+                    </a>
+                </div>
+            </div>
+        </div><!-- /notifWrap -->
+    </div><!-- /topbar -->
+
     <div class="content">
 
-        <!-- Notification banner for new pending orders -->
         <div class="notif-banner" th:if="${pendingCount > 0}">
             🔔 You have <strong th:text="${pendingCount}">0</strong> pending order(s) waiting for confirmation!
             <span th:if="${newToday > 0}" th:text="'(' + ${newToday} + ' new today)'"></span>
         </div>
 
-        <!-- Stats strip -->
         <div class="stats-strip">
             <div class="stat-mini">
                 <div class="stat-mini-num" th:text="${orders.size()}">0</div>
@@ -178,7 +262,6 @@
             </div>
         </div>
 
-        <!-- Search bar -->
         <form class="search-bar" method="GET" action="/admin/orders">
             <div class="search-field">
                 <label>Search by Order ID</label>
@@ -192,22 +275,16 @@
             <a href="/admin/orders" class="btn-clear-s">✕ Clear</a>
         </form>
 
-        <!-- Table -->
         <div class="table-wrap">
             <table>
                 <thead>
                 <tr>
-                    <th>#ID</th>
-                    <th>Customer</th>
-                    <th>Items</th>
-                    <th>Total</th>
-                    <th>Type</th>
-                    <th>Status</th>
-                    <th>Date</th>
-                    <th>Action</th>
+                    <th>#ID</th><th>Customer</th><th>Items</th><th>Total</th>
+                    <th>Type</th><th>Status</th><th>Date</th><th>Action</th>
                 </tr>
                 </thead>
                 <tbody>
+                <!-- FIX 2: empty state only shows when orders list is actually empty -->
                 <tr>
                     <td colspan="8">
                         <div class="empty-state">
@@ -216,6 +293,7 @@
                         </div>
                     </td>
                 </tr>
+
                 <tr th:each="o : ${orders}">
                     <td style="font-weight:600;color:var(--accent);" th:text="'#' + ${o.id}">#1</td>
                     <td>
@@ -226,22 +304,39 @@
                     </td>
                     <td>
                         <div class="items-cell">
-                <span th:each="item,i : ${o.items}">
-                  <span th:text="${item.quantity + 'x ' + item.productName}">1x Brownie</span>
-                  <span th:if="${!i.last}">, </span>
-                </span>
+                            <span th:each="item,i : ${o.items}">
+                                <span th:text="${item.quantity} + 'x ' + ${item.productName}">1x Brownie</span>
+                                <span th:if="${!i.last}">, </span>
+                            </span>
                         </div>
                     </td>
                     <td style="font-weight:600;color:var(--cream);"
                         th:text="'Rs. ' + ${#numbers.formatDecimal(o.totalAmount,1,'COMMA',2,'POINT')}">Rs. 0</td>
                     <td th:text="${o.deliveryType == 'PICKUP'} ? '🏪 Pickup' : '🚚 Delivery'">Delivery</td>
                     <td>
-              <span class="chip"
-                    th:text="${o.statusLabel}">Status</span>
+                        <!-- FIX 3: classappend uses single ${} — all comparisons inside one expression -->
+                        <span class="chip"
+                              th:classappend="${o.status == 'PENDING'        ? 'chip-orange' :
+                                               (o.status == 'CONFIRMED'     ? 'chip-blue'   :
+                                               (o.status == 'IN_PREPARATION'? 'chip-purple' :
+                                               (o.status == 'READY'         ? 'chip-teal'   :
+                                               (o.status == 'DELIVERED'     ? 'chip-green'  :
+                                               (o.status == 'CANCELLED'     ? 'chip-red'    : 'chip-grey')))))}"
+                              th:text="${o.statusLabel}">Status</span>
                     </td>
                     <td th:text="${#temporals.format(o.createdAt,'dd MMM yyyy')}">Date</td>
                     <td>
                         <a th:href="'/admin/orders/' + ${o.id}" class="btn-sm btn-view">View →</a>
+                        <form th:if="${o.status != 'DELIVERED' and o.status != 'CANCELLED'}"
+                              method="POST"
+                              th:action="'/admin/orders/' + ${o.id} + '/status'"
+                              style="display:inline-block;">
+                            <input type="hidden" name="status" value="DELIVERED"/>
+                            <button type="submit" class="btn-sm btn-delivered"
+                                    onclick="return confirm('Mark this order as delivered? This will update the customer loyalty tier on their next dashboard refresh.')">
+                                🚚 Delivered
+                            </button>
+                        </form>
                     </td>
                 </tr>
                 </tbody>
@@ -249,5 +344,40 @@
         </div>
     </div>
 </div>
+
+<!-- FIX 4: script is OUTSIDE all divs — correct HTML position -->
+<script>
+    function toggleNotifPanel(e) {
+        e.stopPropagation();
+        var panel = document.getElementById('notifPanel');
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    }
+    document.addEventListener('click', function(e) {
+        var wrap  = document.getElementById('notifWrap');
+        var panel = document.getElementById('notifPanel');
+        if (wrap && panel && !wrap.contains(e.target)) {
+            panel.style.display = 'none';
+        }
+    });
+    function markAllRead() {
+        fetch('/admin/orders/notifications/mark-read', { method: 'POST' })
+            .then(function() {
+                var badge = document.getElementById('notifBadge');
+                if (badge) badge.style.display = 'none';
+                var count = document.getElementById('panelCount');
+                if (count) count.textContent = '(all read)';
+                var list = document.getElementById('notifList');
+                if (list) {
+                    list.innerHTML = '<div style="padding:28px;text-align:center;' +
+                        'color:rgba(253,246,236,.4);font-size:.83rem;">✅ All caught up!</div>';
+                }
+                setTimeout(function() {
+                    var panel = document.getElementById('notifPanel');
+                    if (panel) panel.style.display = 'none';
+                }, 700);
+            })
+            .catch(function(err) { console.error('markAllRead error:', err); });
+    }
+</script>
 </body>
 </html>

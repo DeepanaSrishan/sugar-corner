@@ -24,6 +24,14 @@ public class ProductController {
     @Autowired
     private ProductService productService;
 
+    private Customer getLoggedInCustomer(HttpSession session) {
+        Customer c = (Customer) session.getAttribute("customerUser");
+        if (c != null) return c;
+        Customer fallback = (Customer) session.getAttribute("customer");
+        if (fallback != null && !fallback.isAdmin()) return fallback;
+        return null;
+    }
+
     // ── Product Listing (browse / search / filter) ─────────────
     @GetMapping
     public String listProducts(
@@ -45,7 +53,7 @@ public class ProductController {
         model.addAttribute("maxPrice",   maxPrice);
 
         // Pass customer to nav bar (null-safe)
-        model.addAttribute("customer", session.getAttribute("customer"));
+        model.addAttribute("customer", getLoggedInCustomer(session));
 
         return "products/list";
     }
@@ -56,9 +64,13 @@ public class ProductController {
         Optional<Product> opt = productService.getById(id);
         if (opt.isEmpty() || !opt.get().isAvailable()) return "redirect:/products";
 
-        model.addAttribute("product",  opt.get());
-        model.addAttribute("featured", productService.getFeaturedProducts());
-        model.addAttribute("customer", session.getAttribute("customer"));
+        // Pass live stock count so the template can cap the qty selector
+        int liveStock = productService.getStock(opt.get().getId());
+
+        model.addAttribute("product",   opt.get());
+        model.addAttribute("maxStock",  liveStock);          // ← NEW: used by detail.html JS
+        model.addAttribute("featured",  productService.getFeaturedProducts());
+        model.addAttribute("customer",  getLoggedInCustomer(session));
 
         return "products/detail";
     }

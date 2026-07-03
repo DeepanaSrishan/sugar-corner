@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Payment – Sugar Corner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <style>
+        :root{--brown-dark:#2C1810;--brown-mid:#5C3317;--brown-warm:#8B4513;--caramel:#C68642;
+            --cream:#FDF6EC;--cream-dark:#F5E6D0;--white:#FFFEF9;--text-dark:#1A0F08;
+            --text-muted:#7A5C45;--success:#27AE60;--error:#C0392B;--sidebar-w:260px;}
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text-dark);display:flex;min-height:100vh;}
+        .sidebar{width:var(--sidebar-w);background:linear-gradient(175deg,var(--brown-dark),var(--brown-mid));
+            position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;padding:32px 0;z-index:100;}
+        .sidebar-brand{text-align:center;padding:0 24px 32px;border-bottom:1px solid rgba(255,255,255,.1);}
+        .sidebar-brand .logo{font-size:38px;display:block;margin-bottom:8px;}
+        .sidebar-brand h2{font-family:'Playfair Display',serif;color:var(--cream);font-size:1.3rem;}
+        .sidebar-brand small{color:var(--caramel);font-size:.75rem;letter-spacing:1px;text-transform:uppercase;}
+        nav{flex:1;padding:8px 16px;}
+        .nav-section{font-size:.68rem;letter-spacing:1.5px;text-transform:uppercase;color:rgba(253,246,236,.4);padding:14px 12px 5px;}
+        .nav-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;margin-bottom:3px;
+            color:rgba(253,246,236,.8);font-size:.87rem;text-decoration:none;transition:all .2s;}
+        .nav-item:hover,.nav-item.active{background:rgba(196,134,66,.25);color:var(--cream);}
+        .nav-icon{font-size:16px;width:20px;text-align:center;}
+        .sidebar-footer{padding:0 16px 16px;}
+        .logout-btn{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;
+            color:rgba(253,246,236,.6);font-size:.85rem;text-decoration:none;border:1px solid rgba(255,255,255,.1);transition:all .2s;}
+        .logout-btn:hover{background:rgba(192,57,43,.25);color:#FF8A80;}
+        .main{margin-left:var(--sidebar-w);flex:1;}
+        .topbar{background:var(--white);padding:18px 36px;border-bottom:1px solid var(--cream-dark);
+            display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:50;box-shadow:0 2px 12px rgba(44,24,16,.06);}
+        .topbar a{color:var(--text-muted);font-size:.84rem;text-decoration:none;}
+        .topbar a:hover{color:var(--brown-warm);}
+        .topbar .sep{color:var(--text-muted);}
+        .topbar h1{font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--brown-dark);}
+        .content{padding:32px 36px;max-width:900px;}
+        .pay-grid{display:grid;grid-template-columns:1fr 340px;gap:24px;align-items:start;}
+
+        /* Order summary */
+        .summary-card{background:var(--white);border-radius:18px;border:1px solid var(--cream-dark);
+            overflow:hidden;position:sticky;top:90px;animation:fadeSlideUp .4s ease both;}
+        .summary-hdr{background:linear-gradient(135deg,var(--brown-warm),var(--brown-mid));padding:18px 22px;}
+        .summary-hdr h3{font-family:'Playfair Display',serif;color:var(--cream);font-size:1rem;}
+        .summary-body{padding:18px 22px;}
+        .sum-row{display:flex;justify-content:space-between;font-size:.875rem;margin-bottom:10px;}
+        .sum-label{color:var(--text-muted);}
+        .sum-val{color:var(--brown-dark);font-weight:500;}
+        .sum-total{font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--brown-warm);
+            border-top:1px solid var(--cream-dark);padding-top:12px;margin-top:8px;
+            display:flex;justify-content:space-between;align-items:center;}
+
+        /* Payment form */
+        .pay-card{background:var(--white);border-radius:18px;border:1px solid var(--cream-dark);
+            padding:28px 32px;animation:fadeSlideUp .4s ease both .05s;}
+        .section-title{font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--brown-dark);
+            margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--cream-dark);}
+
+        /* Method cards */
+        .method-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:24px;}
+        .method-option input[type=radio]{display:none;}
+        .method-label{display:flex;align-items:center;gap:16px;padding:18px 20px;
+            border:2px solid #E8D8C4;border-radius:14px;cursor:pointer;transition:all .2s;background:var(--cream);}
+        .method-option input[type=radio]:checked + .method-label{
+            border-color:var(--caramel);background:rgba(196,134,66,.07);
+            box-shadow:0 0 0 3px rgba(196,134,66,.15);}
+        .method-icon{font-size:28px;width:40px;text-align:center;flex-shrink:0;}
+        .method-name{font-weight:600;color:var(--brown-dark);font-size:.95rem;}
+        .method-desc{font-size:.78rem;color:var(--text-muted);margin-top:3px;}
+        .method-badge{margin-left:auto;padding:3px 10px;border-radius:100px;font-size:.7rem;font-weight:600;
+            background:rgba(39,174,96,.12);color:var(--success);flex-shrink:0;}
+
+        /* Card details (shown when CARD selected) */
+        #cardDetails{display:none;background:var(--cream);border-radius:12px;padding:20px;
+            border:1px solid var(--cream-dark);margin-bottom:20px;}
+        #cardDetails.show{display:block;}
+        .form-group{margin-bottom:14px;}
+        .form-group label{display:block;font-size:.75rem;font-weight:500;letter-spacing:.5px;
+            text-transform:uppercase;color:var(--text-dark);margin-bottom:7px;}
+        .form-group input{width:100%;padding:11px 14px;border:1.5px solid #E8D8C4;border-radius:11px;
+            font-family:inherit;font-size:.875rem;color:var(--text-dark);background:var(--white);outline:none;transition:all .2s;}
+        .form-group input:focus{border-color:var(--caramel);box-shadow:0 0 0 3px rgba(196,134,66,.1);}
+        .form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+        .secure-note{font-size:.75rem;color:var(--text-muted);margin-top:8px;display:flex;align-items:center;gap:4px;}
+
+        .btn-pay{width:100%;padding:15px;background:linear-gradient(135deg,var(--brown-warm),var(--brown-mid));
+            color:var(--cream);border:none;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;
+            cursor:pointer;transition:all .25s;margin-top:8px;}
+        .btn-pay:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(92,51,23,.3);}
+
+        @keyframes fadeSlideUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+        @media(max-width:900px){.sidebar{display:none;}.main{margin-left:0;}}
+        @media(max-width:700px){.pay-grid{grid-template-columns:1fr;}.content{padding:20px;}}
+    </style>
+</head>
+<body>
+<aside class="sidebar">
+    <div class="sidebar-brand">
+        <span class="logo">🍫</span>
+        <h2>Sugar Corner</h2>
+        <small>Customer Portal</small>
+    </div>
+    <nav>
+        <div class="nav-section">Main Menu</div>
+        <a class="nav-item" href="/customer/dashboard"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a class="nav-item" href="/customer/profile"><span class="nav-icon">👤</span> My Profile</a>
+        <div class="nav-section">Shop</div>
+        <a class="nav-item" href="/products"><span class="nav-icon">🍫</span> Browse Brownies</a>
+        <a class="nav-item" href="/cart"><span class="nav-icon">🛒</span> My Cart</a>
+        <a class="nav-item" href="/orders"><span class="nav-icon">📦</span> My Orders</a>
+        <a class="nav-item active" href="/payments"><span class="nav-icon">💳</span> My Payments</a>
+        <div class="nav-section">Support</div>
+        <a class="nav-item" href="/contact"><span class="nav-icon">💬</span> Contact &amp; Feedback</a>
+    </nav>
+    <div class="sidebar-footer">
+        <a class="logout-btn" href="/logout"><span>🚪</span> Sign Out</a>
+    </div>
+</aside>
+
+<div class="main">
+    <div class="topbar">
+        <a href="/orders">My Orders</a>
+        <span class="sep">›</span>
+        <a th:href="'/orders/' + ${order.id}" th:text="'Order #' + ${order.id}">Order</a>
+        <span class="sep">›</span>
+        <h1>Payment</h1>
+    </div>
+    <div class="content">
+        <form method="POST" action="/payments/submit">
+            <input type="hidden" name="orderId" th:value="${order.id}"/>
+
+            <div class="pay-grid">
+                <!-- LEFT: payment method selection -->
+                <div class="pay-card">
+                    <div class="section-title">💳 Choose Payment Method</div>
+
+                    <div class="method-grid">
+                        <!-- Card -->
+                        <div class="method-option">
+                            <input type="radio" name="paymentMethod" id="mCard" value="CARD" checked
+                                   onchange="toggleCard(this)"/>
+                            <label class="method-label" for="mCard">
+                                <span class="method-icon">💳</span>
+                                <div>
+                                    <div class="method-name">Credit / Debit Card</div>
+                                    <div class="method-desc">Visa, Mastercard — instant confirmation</div>
+                                </div>
+                                <span class="method-badge">Instant</span>
+                            </label>
+                        </div>
+
+                        <!-- Cash on Delivery -->
+                        <div class="method-option">
+                            <input type="radio" name="paymentMethod" id="mCOD" value="CASH_ON_DELIVERY"
+                                   onchange="toggleCard(this)"/>
+                            <label class="method-label" for="mCOD">
+                                <span class="method-icon">💵</span>
+                                <div>
+                                    <div class="method-name">Cash on Delivery</div>
+                                    <div class="method-desc">Pay cash when your order arrives</div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- Bank Transfer -->
+                        <div class="method-option">
+                            <input type="radio" name="paymentMethod" id="mBank" value="BANK_TRANSFER"
+                                   onchange="toggleCard(this)"/>
+                            <label class="method-label" for="mBank">
+                                <span class="method-icon">🏦</span>
+                                <div>
+                                    <div class="method-name">Bank Transfer</div>
+                                    <div class="method-desc">Transfer to our account — admin confirms</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+
+
+                    <!-- COD info -->
+                    <div id="codInfo" style="display:none;background:var(--cream);border-radius:12px;
+               padding:18px 20px;border:1px solid var(--cream-dark);margin-bottom:20px;">
+                        <p style="font-size:.875rem;color:var(--text-muted);line-height:1.6;">
+                            💵 <strong>Cash on Delivery:</strong> You will pay the delivery person when your
+                            order arrives. Your order will be confirmed and processed immediately.
+                        </p>
+                    </div>
+
+                    <!-- Bank info -->
+                    <div id="bankInfo" style="display:none;background:var(--cream);border-radius:12px;
+               padding:18px 20px;border:1px solid var(--cream-dark);margin-bottom:20px;">
+                        <p style="font-size:.875rem;color:var(--text-muted);line-height:1.6;margin-bottom:10px;">
+                            🏦 <strong>Bank Transfer Details:</strong>
+                        </p>
+                        <div style="font-size:.85rem;color:var(--brown-dark);">
+                            <div>Bank: <strong>Commercial Bank of Ceylon</strong></div>
+                            <div>Account: <strong>1234567890</strong></div>
+                            <div>Name: <strong>Sugar Corner (Pvt) Ltd</strong></div>
+                            <div style="margin-top:8px;color:var(--text-muted);font-size:.78rem;">
+                                Use your Order ID as the transfer reference. Admin will confirm within 24 hours.
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-pay" id="payBtn">🔒 Confirm Payment</button>
+                </div>
+
+                <!-- RIGHT: order summary -->
+                <div class="summary-card">
+                    <div class="summary-hdr"><h3>Order Summary</h3></div>
+                    <div class="summary-body">
+                        <div class="sum-row">
+                            <span class="sum-label">Order ID</span>
+                            <span class="sum-val" th:text="'#' + ${order.id}">#1</span>
+                        </div>
+                        <div class="sum-row">
+                            <span class="sum-label">Items</span>
+                            <span class="sum-val" th:text="${order.items != null} ? ${order.items.size()} + ' item(s)' : '–'">–</span>
+                        </div>
+                        <div th:each="item : ${order.items}" class="sum-row" style="padding-left:8px;">
+              <span class="sum-label" style="font-size:.8rem;"
+                    th:text="${item.quantity} + 'x ' + ${item.productName}">1x Brownie</span>
+                            <span class="sum-val" style="font-size:.8rem;"
+                                  th:text="'Rs. ' + ${#numbers.formatDecimal(item.getSubtotal(),1,'COMMA',2,'POINT')}">Rs. 0</span>
+                        </div>
+                        <div class="sum-row">
+                            <span class="sum-label">Delivery</span>
+                            <span class="sum-val" th:text="${order.deliveryType == 'PICKUP'} ? '🏪 Pickup' : '🚚 Delivery'">–</span>
+                        </div>
+                        <div class="sum-total">
+                            <span>Total</span>
+                            <span th:text="'Rs. ' + ${#numbers.formatDecimal(order.totalAmount,1,'COMMA',2,'POINT')}">Rs. 0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════
+         SITE FOOTER — Sugar Corner (compact version)
+         Sits inside .main as last child before </div>
+         ═══════════════════════════════════════════════════ -->
+    <footer style="background:linear-gradient(160deg,#2C1810,#1A0D07);
+                   color:rgba(253,246,236,.72);margin-top:auto;padding:0;">
+
+        <!-- Thin wave divider -->
+        <svg viewBox="0 0 1200 30" preserveAspectRatio="none"
+             style="width:100%;display:block;" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#FDF6EC" d="M0,15 C400,30 800,0 1200,15 L1200,0 L0,0 Z"/>
+        </svg>
+
+        <!-- Three-column grid -->
+        <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr;
+                    gap:28px;padding:28px 36px 20px;">
+
+            <!-- Col 1: Brand + contact + socials -->
+            <div>
+                <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px;">
+                    <span style="font-size:22px;">🍫</span>
+                    <span style="font-family:'Playfair Display',serif;font-size:1.05rem;
+                                 color:rgba(253,246,236,.92);">Sugar Corner</span>
+                </div>
+                <p style="font-size:.76rem;color:rgba(253,246,236,.45);
+                           line-height:1.55;margin-bottom:12px;max-width:220px;">
+                    Handcrafted brownies baked with love,<br/>delivered fresh across Sri Lanka.
+                </p>
+                <div style="font-size:.75rem;color:rgba(253,246,236,.5);
+                             display:flex;flex-direction:column;gap:5px;margin-bottom:14px;">
+                    <span>📍 Colombo, Sri Lanka</span>
+                    <span>🕐 Open Daily · 8 AM – 10 PM</span>
+                    <a href="https://tr.ee/3QfscnrEo3" target="_blank" rel="noopener"
+                       style="color:#C68642;text-decoration:none;">💬 Chat on WhatsApp</a>
+                </div>
+
+                <!-- Social buttons — compact, emoji icons like the image -->
+                <div style="display:flex;gap:7px;">
+
+                    <!-- Facebook -->
+                    <a href="https://l.instagram.com/?u=https%3A%2F%2Fwww.facebook.com%2Fshare%2F15f8FQiHcz%2F%3Fmibextid%3DwwXIfr%26utm_source%3Dig%26utm_medium%3Dsocial%26utm_content%3Dlink_in_bio&e=AT4vmwXYZZWGdPX_iamw5cjUrYDXQUB7h0p38flWq4J9suFa2vFoBTFciroc8w-ya-MskS5VuxhSBlF8ud_tHYKaqVYwcnuX8MzeioFnjokPmqxs9QPofn4Lqw"
+                       target="_blank" rel="noopener" title="Facebook"
+                       style="width:34px;height:34px;border-radius:9px;display:flex;
+                              align-items:center;justify-content:center;
+                              background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+                              text-decoration:none;transition:all .2s;"
+                       onmouseover="this.style.background='rgba(66,103,178,.35)';this.style.transform='translateY(-2px)'"
+                       onmouseout="this.style.background='rgba(255,255,255,.07)';this.style.transform='none'">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="#7B9EE8">
+                            <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+                        </svg>
+                    </a>
+
+                    <!-- Instagram -->
+                    <a href="https://tr.ee/-6CBrcau-M" target="_blank" rel="noopener" title="Instagram"
+                       style="width:34px;height:34px;border-radius:9px;display:flex;
+                              align-items:center;justify-content:center;
+                              background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+                              text-decoration:none;transition:all .2s;"
+                       onmouseover="this.style.background='rgba(193,53,132,.35)';this.style.transform='translateY(-2px)'"
+                       onmouseout="this.style.background='rgba(255,255,255,.07)';this.style.transform='none'">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                             stroke="#E870B0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                            <circle cx="12" cy="12" r="4"/>
+                            <circle cx="17.5" cy="6.5" r="1.2" fill="#E870B0" stroke="none"/>
+                        </svg>
+                    </a>
+
+                    <!-- TikTok -->
+                    <a href="https://tr.ee/1sfpiJhMAt" target="_blank" rel="noopener" title="TikTok"
+                       style="width:34px;height:34px;border-radius:9px;display:flex;
+                              align-items:center;justify-content:center;
+                              background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+                              text-decoration:none;transition:all .2s;"
+                       onmouseover="this.style.background='rgba(255,255,255,.15)';this.style.transform='translateY(-2px)'"
+                       onmouseout="this.style.background='rgba(255,255,255,.07)';this.style.transform='none'">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="rgba(253,246,236,.85)">
+                            <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.79 1.53V6.77a4.85 4.85 0 0 1-1.02-.08z"/>
+                        </svg>
+                    </a>
+
+                    <!-- WhatsApp -->
+                    <a href="https://tr.ee/3QfscnrEo3" target="_blank" rel="noopener" title="WhatsApp"
+                       style="width:34px;height:34px;border-radius:9px;display:flex;
+                              align-items:center;justify-content:center;
+                              background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+                              text-decoration:none;transition:all .2s;"
+                       onmouseover="this.style.background='rgba(37,211,102,.25)';this.style.transform='translateY(-2px)'"
+                       onmouseout="this.style.background='rgba(255,255,255,.07)';this.style.transform='none'">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="#5CE89A">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
+                        </svg>
+                    </a>
+
+                </div>
+            </div>
+
+            <!-- Col 2: Shop Hours -->
+            <div>
+                <div style="font-family:'Playfair Display',serif;font-size:.82rem;
+                            color:rgba(253,246,236,.85);margin-bottom:12px;
+                            padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.07);">
+                    Shop Hours
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px;font-size:.75rem;">
+                    <div style="display:flex;justify-content:space-between;">
+                        <span style="color:rgba(253,246,236,.45);">Mon – Fri</span>
+                        <span style="color:#27AE60;font-weight:500;">8 AM – 9 PM</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;">
+                        <span style="color:rgba(253,246,236,.45);">Saturday</span>
+                        <span style="color:#27AE60;font-weight:500;">9 AM – 10 PM</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;">
+                        <span style="color:rgba(253,246,236,.45);">Sunday</span>
+                        <span style="color:#E67E22;font-weight:500;">10 AM – 8 PM</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;">
+                        <span style="color:rgba(253,246,236,.45);">Holidays</span>
+                        <span style="color:#E67E22;font-weight:500;">11 AM – 6 PM</span>
+                    </div>
+                </div>
+                <div style="margin-top:12px;padding:8px 10px;
+                            background:rgba(198,134,66,.1);border-radius:8px;
+                            border:1px solid rgba(198,134,66,.18);
+                            font-size:.72rem;color:rgba(253,246,236,.55);line-height:1.5;">
+                    🚚 <strong style="color:rgba(253,246,236,.75);">Free delivery</strong>
+                    within Colombo for orders above Rs.&nbsp;500
+                </div>
+            </div>
+
+            <!-- Col 3: About -->
+            <div>
+                <div style="font-family:'Playfair Display',serif;font-size:.82rem;
+                            color:rgba(253,246,236,.85);margin-bottom:12px;
+                            padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.07);">
+                    About Us
+                </div>
+                <p style="font-size:.75rem;color:rgba(253,246,236,.45);
+                           line-height:1.6;margin-bottom:10px;">
+                    A home-based brownie shop in Colombo using premium Belgian chocolate
+                    and the finest local ingredients. Every brownie is made to order.
+                </p>
+                <p style="font-size:.75rem;color:rgba(253,246,236,.45);line-height:1.6;">
+                    Custom orders &amp; gift boxes available — message us on WhatsApp!
+                </p>
+                <div style="margin-top:12px;display:flex;align-items:center;gap:6px;">
+                    <span style="color:#F4C430;font-size:.82rem;letter-spacing:2px;">★★★★★</span>
+                    <span style="font-size:.7rem;color:rgba(253,246,236,.35);">Loved by customers</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Bottom bar -->
+        <div style="border-top:1px solid rgba(255,255,255,.06);
+                    padding:10px 36px;
+                    display:flex;align-items:center;justify-content:space-between;
+                    flex-wrap:wrap;gap:8px;">
+            <p style="font-size:.7rem;color:rgba(253,246,236,.3);">
+                © 2025 Sugar Corner · Made with ❤️ in Sri Lanka
+            </p>
+            <a href="/contact"
+               style="font-size:.7rem;color:rgba(253,246,236,.3);text-decoration:none;"
+               onmouseover="this.style.color='#C68642'"
+               onmouseout="this.style.color='rgba(253,246,236,.3)'">Contact Us</a>
+        </div>
+
+    </footer>
+
+</div>
+
+<script>
+    function toggleCard(radio) {
+        const card = document.getElementById('cardDetails');
+        const cod  = document.getElementById('codInfo');
+        const bank = document.getElementById('bankInfo');
+        const btn  = document.getElementById('payBtn');
+        card.style.display = 'none';
+        cod.style.display  = 'none';
+        bank.style.display = 'none';
+        if (radio.value === 'CARD')             { card.style.display = 'block'; btn.textContent = '🔒 Pay Now'; }
+        else if (radio.value === 'CASH_ON_DELIVERY') { cod.style.display = 'block'; btn.textContent = '✅ Confirm COD Order'; }
+        else                                    { bank.style.display = 'block'; btn.textContent = '🏦 Confirm Bank Transfer'; }
+    }
+
+    function formatCard(input) {
+        let v = input.value.replace(/\D/g,'');
+        input.value = v.replace(/(.{4})/g,'$1 ').trim();
+    }
+</script>
+</body>
+</html>

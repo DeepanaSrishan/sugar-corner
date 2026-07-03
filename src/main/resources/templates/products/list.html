@@ -1,4 +1,15 @@
 <!DOCTYPE html>
+<!--
+  Product List / Browse Brownies
+  File: src/main/resources/templates/products/list.html
+
+  FIXES:
+  1. Nav sidebar — all href="#" replaced with correct URLs
+  2. Added My Cart and My Payments to sidebar
+  3. Product grid uses minmax(220px,1fr) — fits inside sidebar layout without overflow
+  4. Content area has max-width and overflow:hidden to prevent horizontal scroll
+  5. Responsive breakpoints tightened so page fits all screen sizes
+-->
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"/>
@@ -6,6 +17,7 @@
     <title>Our Brownies – Sugar Corner</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
     <style>
+        /* ── Design tokens ─────────────────────────────────────── */
         :root {
             --brown-dark:#2C1810; --brown-mid:#5C3317; --brown-warm:#8B4513;
             --caramel:#C68642; --cream:#FDF6EC; --cream-dark:#F5E6D0;
@@ -13,155 +25,310 @@
             --success:#27AE60; --error:#C0392B; --sidebar-w:260px;
         }
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-        body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text-dark);display:flex;min-height:100vh;}
+        body{
+            font-family:'DM Sans',sans-serif;
+            background: transparent;
+            color:var(--text-dark);
+            display:flex;
+            min-height:100vh;
+            /* Prevent horizontal scroll caused by grid overflow */
+            overflow-x:hidden;
+        }
 
-        /* ── Sidebar ── */
-        .sidebar{width:var(--sidebar-w);background:linear-gradient(175deg,var(--brown-dark),var(--brown-mid));
-            position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;padding:32px 0;z-index:100;}
-        .sidebar-brand{text-align:center;padding:0 24px 32px;border-bottom:1px solid rgba(255,255,255,.1);}
+        /* ── Sidebar ───────────────────────────────────────────── */
+        .sidebar{
+            width: var(--sidebar-w);
+
+            /* Glass effect background */
+            background: rgba(101, 51, 2, 0.73); /* transparent */
+
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px); /* for Safari */
+
+            border-right: 1px solid rgba(255,255,255,0.2);
+
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+
+            display: flex;
+            flex-direction: column;
+            padding: 28px 0;
+            z-index: 100;
+
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+
+            /* Slide animation */
+            animation: slideIn .4s ease both;
+        }
+
+        @keyframes slideIn{from{transform:translateX(-100%);}to{transform:translateX(0);}}
+
+        .sidebar-brand{text-align:center;padding:0 24px 22px;border-bottom:1px solid rgba(255,255,255,.1);}
         .sidebar-brand .logo{font-size:38px;display:block;margin-bottom:8px;}
         .sidebar-brand h2{font-family:'Playfair Display',serif;color:var(--cream);font-size:1.3rem;}
-        .sidebar-brand small{color:var(--caramel);font-size:.75rem;letter-spacing:1px;text-transform:uppercase;}
-        .user-card{margin:20px 16px;background:rgba(255,255,255,.07);border-radius:14px;padding:14px;
-            display:flex;align-items:center;gap:10px;}
-        .user-avatar{width:42px;height:42px;border-radius:50%;
+        .sidebar-brand small{color:var(--caramel);font-size:.72rem;letter-spacing:1px;text-transform:uppercase;}
+
+        /* Mini user card shown when logged in */
+        .user-card{
+            margin:16px 14px;
+            background:rgba(255,255,255,.07);
+            border-radius:13px; padding:13px;
+            display:flex; align-items:center; gap:10px;
+        }
+        .user-avatar{
+            width:40px; height:40px; border-radius:50%;
             background:linear-gradient(135deg,var(--caramel),var(--brown-warm));
-            display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:var(--cream);flex-shrink:0;overflow:hidden;}
+            display:flex; align-items:center; justify-content:center;
+            font-size:15px; font-weight:600; color:var(--cream);
+            flex-shrink:0; overflow:hidden;
+        }
         .user-avatar img{width:100%;height:100%;object-fit:cover;}
-        .user-name{color:var(--cream);font-size:.88rem;font-weight:500;}
-        .user-role{color:var(--caramel);font-size:.7rem;}
-        nav{flex:1;padding:8px 16px;overflow-y:auto;}
-        .nav-section{font-size:.68rem;letter-spacing:1.5px;text-transform:uppercase;color:rgba(253,246,236,.4);padding:14px 12px 5px;}
-        .nav-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;margin-bottom:3px;
-            color:rgba(253,246,236,.8);font-size:.87rem;text-decoration:none;transition:all .2s;}
-        .nav-item:hover,.nav-item.active{background:rgba(196,134,66,.25);color:var(--cream);}
-        .nav-icon{font-size:16px;width:20px;text-align:center;}
-        .sidebar-footer{padding:0 16px 16px;}
-        .logout-btn{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;
-            color:rgba(253,246,236,.6);font-size:.85rem;text-decoration:none;
-            border:1px solid rgba(255,255,255,.1);transition:all .2s;}
-        .logout-btn:hover{background:rgba(192,57,43,.25);color:#FF8A80;border-color:rgba(192,57,43,.4);}
+        .user-name{color:var(--cream);font-size:.86rem;font-weight:500;}
+        .user-role{color:var(--caramel);font-size:.68rem;margin-top:1px;}
 
-        /* ── Main ── */
-        .main{margin-left:var(--sidebar-w);flex:1;}
-        .topbar{background:var(--white);padding:18px 36px;border-bottom:1px solid var(--cream-dark);
+        /* Nav list */
+        nav{flex:1;padding:6px 14px;overflow-y:auto;}
+        nav::-webkit-scrollbar{width:3px;}
+        nav::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:2px;}
+
+        .nav-section{
+            font-size:.63rem;letter-spacing:1.8px;text-transform:uppercase;
+            color:rgba(253,246,236,.35);padding:14px 10px 5px;
+        }
+        .nav-item{
+            display:flex;align-items:center;gap:11px;
+            padding:10px 13px;border-radius:12px;margin-bottom:3px;
+            color:rgba(253,246,236,.78);font-size:.875rem;
+            text-decoration:none;transition:all .2s;
+        }
+        .nav-item:hover{background:rgba(196,134,66,.22);color:var(--cream);transform:translateX(3px);}
+        .nav-item.active{
+            background:rgba(196,134,66,.28);color:var(--cream);font-weight:600;
+            border-left:3px solid var(--caramel);padding-left:10px;
+        }
+        .nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0;}
+
+        .sidebar-footer{padding:12px 14px;border-top:1px solid rgba(255,255,255,.08);}
+        .logout-btn{
+            display:flex;align-items:center;gap:10px;padding:10px 13px;border-radius:12px;
+            color:rgba(253,246,236,.55);font-size:.84rem;text-decoration:none;
+            border:1px solid rgba(255,255,255,.08);transition:all .2s;
+        }
+        .logout-btn:hover{background:rgba(192,57,43,.25);color:#FF8A80;}
+
+        /* ── Main content ──────────────────────────────────────── */
+        /* FIX: min-width:0 prevents grid children from forcing parent wider than sidebar offset */
+        .main{margin-left:var(--sidebar-w);flex:1;min-width:0;}
+
+        .topbar{
+            background:var(--white);padding:16px 30px;
+            border-bottom:1px solid var(--cream-dark);
             display:flex;align-items:center;justify-content:space-between;
-            position:sticky;top:0;z-index:50;box-shadow:0 2px 12px rgba(44,24,16,.06);}
-        .topbar h1{font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--brown-dark);}
+            position:sticky;top:0;z-index:50;
+            box-shadow:0 2px 12px rgba(44,24,16,.06);
+        }
+        .topbar h1{font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--brown-dark);}
         .topbar-right{display:flex;align-items:center;gap:10px;}
-        .content{padding:32px 36px;}
 
-        /* ── Featured Banner ── */
-        .featured-section{margin-bottom:36px;}
-        .section-title{font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--brown-dark);
-            margin-bottom:16px;display:flex;align-items:center;gap:8px;}
-        .featured-scroll{display:flex;gap:16px;overflow-x:auto;padding-bottom:8px;scrollbar-width:thin;}
+        /* FIX: overflow hidden on content prevents horizontal scroll */
+        .content{padding:28px 30px;overflow-x:hidden;}
+
+        /* ── Search & Filter bar ───────────────────────────────── */
+        .filter-bar{
+            background:var(--white);border-radius:16px;padding:18px 22px;
+            border:1px solid var(--cream-dark);margin-bottom:22px;
+            display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+            animation:fadeSlideUp .4s ease both;
+        }
+        .search-wrap{position:relative;flex:1;min-width:180px;}
+        .search-wrap .icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--caramel);font-size:14px;}
+        .search-wrap input{
+            width:100%;padding:9px 11px 9px 35px;
+            border:1.5px solid var(--cream-dark);border-radius:10px;
+            font-family:inherit;font-size:.875rem;
+            color:var(--text-dark);background:var(--cream);outline:none;transition:all .2s;
+        }
+        .search-wrap input:focus{border-color:var(--caramel);box-shadow:0 0 0 3px rgba(196,134,66,.1);}
+
+        select.filter-sel{
+            padding:9px 13px;border:1.5px solid var(--cream-dark);border-radius:10px;
+            font-family:inherit;font-size:.875rem;color:var(--text-dark);
+            background:var(--cream);outline:none;cursor:pointer;transition:all .2s;
+        }
+        select.filter-sel:focus{border-color:var(--caramel);}
+
+        .btn-filter{
+            padding:9px 20px;background:var(--brown-warm);color:var(--cream);
+            border:none;border-radius:10px;font-family:inherit;font-size:.875rem;
+            font-weight:500;cursor:pointer;transition:all .2s;
+        }
+        .btn-filter:hover{background:var(--brown-mid);transform:translateY(-1px);}
+        .btn-clear{
+            padding:9px 15px;background:transparent;color:var(--text-muted);
+            border:1.5px solid var(--cream-dark);border-radius:10px;
+            font-family:inherit;font-size:.875rem;cursor:pointer;text-decoration:none;
+            display:flex;align-items:center;transition:all .2s;
+        }
+        .btn-clear:hover{border-color:var(--caramel);color:var(--brown-warm);}
+
+        /* ── Featured horizontal scroll ───────────────────────── */
+        .featured-section{margin-bottom:32px;}
+        .section-title{
+            font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--brown-dark);
+            margin-bottom:14px;display:flex;align-items:center;gap:8px;
+        }
+        .featured-scroll{display:flex;gap:14px;overflow-x:auto;padding-bottom:8px;scrollbar-width:thin;}
         .featured-scroll::-webkit-scrollbar{height:4px;}
         .featured-scroll::-webkit-scrollbar-thumb{background:var(--caramel);border-radius:4px;}
 
-        /* ── Search & Filter Bar ── */
-        .filter-bar{
-            background:var(--white);border-radius:16px;padding:20px 24px;
-            border:1px solid var(--cream-dark);margin-bottom:24px;
-            display:flex;align-items:center;gap:14px;flex-wrap:wrap;
-            animation:fadeSlideUp .4s ease both;
+        /* Featured mini card */
+        .feat-card{
+            flex-shrink:0;width:190px;background:var(--white);
+            border-radius:14px;border:1px solid var(--cream-dark);
+            overflow:hidden;transition:all .2s;text-decoration:none;color:inherit;
         }
-        .search-wrap{position:relative;flex:1;min-width:200px;}
-        .search-wrap .icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--caramel);font-size:15px;}
-        .search-wrap input{width:100%;padding:10px 12px 10px 38px;
-            border:1.5px solid #E8D8C4;border-radius:10px;font-family:inherit;font-size:.875rem;
-            color:var(--text-dark);background:var(--cream);outline:none;transition:all .2s;}
-        .search-wrap input:focus{border-color:var(--caramel);box-shadow:0 0 0 3px rgba(196,134,66,.1);}
-        select.filter-sel{padding:10px 14px;border:1.5px solid #E8D8C4;border-radius:10px;
-            font-family:inherit;font-size:.875rem;color:var(--text-dark);background:var(--cream);
-            outline:none;cursor:pointer;transition:all .2s;}
-        select.filter-sel:focus{border-color:var(--caramel);}
-        .btn-filter{padding:10px 22px;background:var(--brown-warm);color:var(--cream);
-            border:none;border-radius:10px;font-family:inherit;font-size:.875rem;font-weight:500;
-            cursor:pointer;transition:all .2s;}
-        .btn-filter:hover{background:var(--brown-mid);transform:translateY(-1px);}
-        .btn-clear{padding:10px 16px;background:transparent;color:var(--text-muted);
-            border:1.5px solid #E8D8C4;border-radius:10px;font-family:inherit;font-size:.875rem;
-            cursor:pointer;text-decoration:none;display:flex;align-items:center;}
-        .btn-clear:hover{border-color:var(--caramel);color:var(--brown-warm);}
+        .feat-card:hover{transform:translateY(-4px);box-shadow:0 10px 28px rgba(44,24,16,.1);border-color:var(--caramel);}
+        .feat-img{
+            height:105px;background:linear-gradient(135deg,var(--cream-dark),#e8d0b0);
+            display:flex;align-items:center;justify-content:center;font-size:40px;
+            position:relative;overflow:hidden;
+        }
+        .feat-img img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;}
+        .feat-body{padding:10px 12px;}
+        .feat-name{font-family:'Playfair Display',serif;font-size:.88rem;color:var(--brown-dark);}
+        .feat-price{color:var(--caramel);font-weight:600;font-size:.85rem;margin-top:2px;}
 
-        /* ── Product Grid ── */
-        .products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:20px;}
+        /* ── Product grid ──────────────────────────────────────── */
+        /*
+          FIX: Changed minmax from 240px to 200px so cards fit inside
+          the available width (viewport - sidebar 260px - padding 60px = ~700px on 1024px screen).
+          auto-fill means it creates as many columns as fit without overflow.
+        */
+        .products-grid{
+            display:grid;
+            grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+            gap:18px;
+        }
 
+        /* Product card */
         .product-card{
             background:var(--white);border-radius:18px;overflow:hidden;
             border:1px solid var(--cream-dark);transition:all .25s;
             animation:fadeSlideUp .4s ease both;
             display:flex;flex-direction:column;
         }
-        .product-card:hover{transform:translateY(-6px);box-shadow:0 16px 40px rgba(44,24,16,.12);border-color:var(--caramel);}
+        .product-card:hover{transform:translateY(-5px);box-shadow:0 14px 36px rgba(44,24,16,.12);border-color:var(--caramel);}
 
-        .product-img{width:100%;height:190px;object-fit:cover;background:var(--cream-dark);
-            display:flex;align-items:center;justify-content:center;font-size:64px;position:relative;}
-        .product-img img{width:100%;height:100%;object-fit:cover;}
-        .product-img-placeholder{width:100%;height:190px;background:linear-gradient(135deg,var(--cream-dark),#e8d0b0);
-            display:flex;align-items:center;justify-content:center;font-size:64px;}
+        /* Image container — fixed height so cards align */
+        .product-img-wrap{height:180px;position:relative;overflow:hidden;
+            background:linear-gradient(135deg,var(--cream-dark),#e8d0b0);
+            display:flex;align-items:center;justify-content:center;font-size:58px;}
+        .product-img-wrap img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;}
 
-        .featured-ribbon{position:absolute;top:12px;left:12px;
+        /* Badges on image */
+        .featured-ribbon{
+            position:absolute;top:10px;left:10px;
             background:linear-gradient(135deg,var(--caramel),var(--brown-warm));
-            color:var(--white);font-size:.7rem;font-weight:600;letter-spacing:.5px;text-transform:uppercase;
-            padding:4px 10px;border-radius:100px;}
+            color:var(--white);font-size:.68rem;font-weight:600;letter-spacing:.5px;
+            text-transform:uppercase;padding:3px 9px;border-radius:100px;z-index:1;
+        }
+        .stock-badge{position:absolute;top:10px;right:10px;padding:3px 9px;
+            border-radius:100px;font-size:.68rem;font-weight:600;z-index:1;}
+        .stock-in {background:rgba(39,174,96,.15);color:var(--success);}
+        .stock-low{background:rgba(230,126,34,.15);color:#E67E22;}
+        .stock-out{background:rgba(192,57,43,.12);color:var(--error);}
 
-        .stock-badge{position:absolute;top:12px;right:12px;padding:4px 10px;border-radius:100px;
-            font-size:.7rem;font-weight:600;letter-spacing:.3px;}
-        .stock-in   {background:rgba(39,174,96,.15);color:var(--success);}
-        .stock-low  {background:rgba(230,126,34,.15);color:#E67E22;}
-        .stock-out  {background:rgba(192,57,43,.12);color:var(--error);}
-
-        .product-body{padding:16px;flex:1;display:flex;flex-direction:column;}
-        .product-cat{font-size:.72rem;font-weight:500;letter-spacing:1px;text-transform:uppercase;
-            color:var(--caramel);margin-bottom:6px;}
-        .product-name{font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--brown-dark);
-            margin-bottom:6px;line-height:1.3;}
-        .product-desc{font-size:.82rem;color:var(--text-muted);line-height:1.5;flex:1;
+        /* Card body text */
+        .product-body{padding:14px;flex:1;display:flex;flex-direction:column;}
+        .product-cat{font-size:.68rem;font-weight:600;letter-spacing:1px;
+            text-transform:uppercase;color:var(--caramel);margin-bottom:5px;}
+        .product-name{font-family:'Playfair Display',serif;font-size:1rem;
+            color:var(--brown-dark);margin-bottom:5px;line-height:1.3;}
+        .product-desc{font-size:.8rem;color:var(--text-muted);line-height:1.5;flex:1;
             display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-        .product-footer{display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:12px;
-            border-top:1px solid var(--cream-dark);}
-        .product-price{font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--brown-dark);font-weight:700;}
-        .product-price span{font-size:.75rem;font-weight:400;color:var(--text-muted);}
-        .btn-view{padding:8px 18px;background:linear-gradient(135deg,var(--brown-warm),var(--brown-mid));
-            color:var(--cream);border:none;border-radius:9px;font-family:inherit;font-size:.82rem;
-            font-weight:500;cursor:pointer;text-decoration:none;transition:all .2s;}
-        .btn-view:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(92,51,23,.3);}
+
+        /* Footer row: price + button */
+        .product-footer{
+            display:flex;align-items:center;justify-content:space-between;
+            margin-top:12px;padding-top:11px;border-top:1px solid var(--cream-dark);
+            gap:8px;
+        }
+        .product-price{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--brown-dark);font-weight:700;}
+        .btn-view{
+            padding:7px 16px;
+            background:linear-gradient(135deg,var(--brown-warm),var(--brown-mid));
+            color:var(--cream);border:none;border-radius:9px;
+            font-family:inherit;font-size:.78rem;font-weight:500;
+            cursor:pointer;text-decoration:none;transition:all .2s;white-space:nowrap;
+        }
+        .btn-view:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(92,51,23,.3);}
         .btn-view.disabled{background:#ccc;color:#999;cursor:not-allowed;pointer-events:none;}
 
-        /* ── Featured card (horizontal mini) ── */
-        .feat-card{
-            flex-shrink:0;width:200px;background:var(--white);border-radius:14px;
-            border:1px solid var(--cream-dark);overflow:hidden;transition:all .2s;
-        }
-        .feat-card:hover{transform:translateY(-4px);box-shadow:0 10px 28px rgba(44,24,16,.1);border-color:var(--caramel);}
-        .feat-img{height:110px;background:linear-gradient(135deg,var(--cream-dark),#e8d0b0);
-            display:flex;align-items:center;justify-content:center;font-size:42px;position:relative;overflow:hidden;}
-        .feat-img img{width:100%;height:100%;object-fit:cover;}
-        .feat-body{padding:10px 12px;}
-        .feat-name{font-family:'Playfair Display',serif;font-size:.9rem;color:var(--brown-dark);}
-        .feat-price{color:var(--caramel);font-weight:600;font-size:.88rem;margin-top:2px;}
+        /* Result count */
+        .result-count{color:var(--text-muted);font-size:.84rem;margin-bottom:16px;}
+        .result-count strong{color:var(--brown-dark);}
 
         /* Empty state */
-        .empty-state{text-align:center;padding:60px 20px;background:var(--white);border-radius:18px;border:1px solid var(--cream-dark);}
-        .empty-state .icon{font-size:56px;margin-bottom:12px;}
-        .empty-state h3{font-family:'Playfair Display',serif;color:var(--brown-dark);margin-bottom:6px;}
+        .empty-state{text-align:center;padding:56px 20px;background:var(--white);
+            border-radius:18px;border:1px solid var(--cream-dark);}
+        .empty-state .icon{font-size:52px;margin-bottom:12px;}
+        .empty-state h3{font-family:'Playfair Display',serif;color:var(--brown-dark);margin-bottom:5px;}
         .empty-state p{color:var(--text-muted);font-size:.875rem;}
-
-        .result-count{color:var(--text-muted);font-size:.85rem;margin-bottom:18px;}
-        .result-count strong{color:var(--brown-dark);}
 
         @keyframes fadeSlideUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
 
-        @media(max-width:900px){.sidebar{display:none;}.main{margin-left:0;}}
-        @media(max-width:580px){.content{padding:20px;}.products-grid{grid-template-columns:1fr 1fr;}}
-        @media(max-width:420px){.products-grid{grid-template-columns:1fr;}}
+        /* ── Responsive ────────────────────────────────────────── */
+        @media(max-width:900px){
+            .sidebar{display:none;}
+            .main{margin-left:0;}
+            .products-grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));}
+        }
+        @media(max-width:580px){
+            .content{padding:16px;}
+            .products-grid{grid-template-columns:1fr 1fr;}
+            .filter-bar{gap:8px;}
+        }
+        @media(max-width:380px){
+            .products-grid{grid-template-columns:1fr;}
+        }
+        /* Background Video */
+        #bg-video {
+            position: fixed;   /* stay full screen always */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+
+            object-fit: cover; /* fill screen nicely */
+            z-index: -1;       /* go behind everything */
+
+            pointer-events: none; /* can't click it */
+        }
+
     </style>
 </head>
 <body>
 
-<!-- SIDEBAR -->
+<body>
+
+<video id="bg-video"
+       autoplay
+       muted
+       loop
+       playsinline>
+    <source src="/videos/v1.mp4" type="video/mp4">
+</video>
+
+<!-- your whole website content below -->
+
+<!-- ══════════════════════════════════════════════════════════
+     SIDEBAR — fixed navigation panel
+     FIX: All nav items now have correct working URLs.
+         Added My Cart (/cart) and My Payments (/payments).
+         Removed all href="#" dead links.
+     ══════════════════════════════════════════════════════════ -->
 <aside class="sidebar">
     <div class="sidebar-brand">
         <span class="logo">🍫</span>
@@ -169,47 +336,63 @@
         <small>Customer Portal</small>
     </div>
 
-    <!-- Show user card only when logged in -->
+    <!-- User mini-card — only shown when logged in -->
     <div class="user-card" th:if="${customer != null}">
         <div class="user-avatar">
-            <img th:if="${customer.profilePhotoPath}" th:src="'/' + ${customer.profilePhotoPath}" alt="photo"/>
-            <span th:unless="${customer.profilePhotoPath}" th:text="${customer.firstName?.substring(0,1)?.toUpperCase()}">K</span>
+            <img th:if="${customer.profilePhotoPath != null and customer.profilePhotoPath != ''}"
+                 th:src="'/' + ${customer.profilePhotoPath}" alt="photo"/>
+            <span th:unless="${customer.profilePhotoPath != null and customer.profilePhotoPath != ''}"
+                  th:text="${customer.firstName != null ? customer.firstName.substring(0,1).toUpperCase() : 'K'}">K</span>
         </div>
         <div>
-            <div class="user-name" th:text="${customer.firstName + ' ' + customer.lastName}">Kasun Perera</div>
+            <div class="user-name" th:text="${customer.firstName + ' ' + customer.lastName}">Guest</div>
             <div class="user-role">Customer</div>
         </div>
     </div>
 
     <nav>
         <div class="nav-section">Main Menu</div>
+        <!-- Dashboard — /customer/dashboard -->
         <a class="nav-item" href="/customer/dashboard"><span class="nav-icon">🏠</span> Dashboard</a>
+        <!-- My Profile — /customer/profile -->
         <a class="nav-item" href="/customer/profile"><span class="nav-icon">👤</span> My Profile</a>
 
         <div class="nav-section">Shop</div>
+        <!-- Browse Brownies — active on this page -->
         <a class="nav-item active" href="/products"><span class="nav-icon">🍫</span> Browse Brownies</a>
-        <a class="nav-item" href="#"><span class="nav-icon">📦</span> My Orders</a>
+        <!-- My Cart — /cart (CartController) -->
+        <a class="nav-item" href="/cart"><span class="nav-icon">🛒</span> My Cart</a>
+        <!-- My Orders — /orders (OrderController) -->
+        <a class="nav-item" href="/orders"><span class="nav-icon">📦</span> My Orders</a>
+        <!-- My Payments — /payments (PaymentController) -->
+        <a class="nav-item" href="/payments"><span class="nav-icon">💳</span> My Payments</a>
 
         <div class="nav-section">Support</div>
-        <a class="nav-item" href="#"><span class="nav-icon">💬</span> Contact Us</a>
-        <a class="nav-item" href="#"><span class="nav-icon">⭐</span> My Feedback</a>
+        <!-- Contact & Feedback — /contact (ContactController) -->
+        <a class="nav-item" href="/contact"><span class="nav-icon">💬</span> Contact &amp; Feedback</a>
     </nav>
 
     <div class="sidebar-footer">
-        <a class="logout-btn" th:if="${customer != null}" href="/logout"><span>🚪</span> Sign Out</a>
-        <a class="logout-btn" th:if="${customer == null}" href="/login"><span>🔐</span> Sign In</a>
+        <!-- Show Sign Out when logged in, Sign In when not -->
+        <a class="logout-btn" th:if="${customer != null}"  href="/logout"><span>🚪</span> Sign Out</a>
+        <a class="logout-btn" th:if="${customer == null}"  href="/login"><span>🔐</span> Sign In</a>
     </div>
 </aside>
 
-<!-- MAIN -->
+<!-- ══════════════════════════════════════════════════════════
+     MAIN CONTENT
+     ══════════════════════════════════════════════════════════ -->
 <div class="main">
+    <!-- Sticky top bar -->
     <div class="topbar">
         <h1>Our Brownies</h1>
         <div class="topbar-right">
-      <span style="font-size:.85rem;color:var(--text-muted);" th:if="${customer != null}"
-            th:text="'Hello, ' + ${customer.firstName} + '! 👋'"></span>
+            <!-- Greeting if logged in, Sign In button if not -->
+            <span style="font-size:.85rem;color:var(--text-muted);" th:if="${customer != null}"
+                  th:text="'Hello, ' + ${customer.firstName} + '! 👋'"></span>
             <a th:if="${customer == null}" href="/login"
-               style="padding:8px 20px;background:var(--brown-warm);color:var(--cream);border-radius:9px;text-decoration:none;font-size:.85rem;font-weight:500;">
+               style="padding:8px 20px;background:var(--brown-warm);color:var(--cream);
+                border-radius:9px;text-decoration:none;font-size:.85rem;font-weight:500;">
                 Sign In
             </a>
         </div>
@@ -217,101 +400,291 @@
 
     <div class="content">
 
-        <!-- Featured Section -->
+        <!-- Out-of-stock error alert (shown after failed order attempt) -->
+        <div th:if="${param.error != null and param.error[0] == 'outofstock'}"
+             style="background:#FFEBEE;border-left:4px solid #C0392B;color:#C0392B;
+                padding:12px 18px;border-radius:12px;margin-bottom:18px;
+                display:flex;align-items:center;gap:8px;">
+            ❌ Sorry, that item is out of stock. Please choose a different product.
+        </div>
+
+        <!-- ── Featured Brownies horizontal scroll ───────────── -->
         <div class="featured-section">
             <div class="section-title">⭐ Featured Brownies</div>
             <div class="featured-scroll">
-                <a th:each="p : ${featured}" th:href="'/products/' + ${p.id}" class="feat-card" style="text-decoration:none;">
+                <!-- Each featured card links to the product detail page -->
+                <a th:each="p : ${featured}"
+                   th:href="'/products/' + ${p.id}"
+                   class="feat-card">
                     <div class="feat-img">
                         <img th:if="${p.imagePath}" th:src="'/' + ${p.imagePath}" th:alt="${p.name}"/>
                         <span th:unless="${p.imagePath}">🍫</span>
                     </div>
                     <div class="feat-body">
                         <div class="feat-name" th:text="${p.name}">Brownie</div>
-                        <div class="feat-price" th:text="'Rs. ' + ${#numbers.formatDecimal(p.price,1,'COMMA',2,'POINT')}">Rs. 350.00</div>
+                        <div class="feat-price"
+                             th:text="'Rs. ' + ${#numbers.formatDecimal(p.price,1,'COMMA',2,'POINT')}">Rs. 350</div>
                     </div>
                 </a>
             </div>
         </div>
 
-        <!-- Search & Filter Bar -->
-        <form class="filter-bar" method="GET" action="/products">
+        <!-- ── Search & Filter form ──────────────────────────── -->
+        <!-- Submits GET to /products with query params: search, category, maxPrice -->
+        <form method="GET" action="/products" class="filter-bar">
+            <!-- Search box -->
             <div class="search-wrap">
                 <span class="icon">🔍</span>
-                <input type="text" name="search" placeholder="Search brownies by name…"
-                       th:value="${search}" autocomplete="off"/>
+                <input type="text" name="search" placeholder="Search brownies…"
+                       th:value="${search}"/>
             </div>
+            <!-- Category dropdown — options loaded from controller -->
             <select name="category" class="filter-sel">
-                <option value="">All Categories</option>
+                <option value="" th:selected="${category == null or category == ''}">All Categories</option>
                 <option th:each="cat : ${categories}"
-                        th:value="${cat}" th:text="${cat}"
-                        th:selected="${cat == category}">Category</option>
+                        th:value="${cat}"
+                        th:text="${cat}"
+                        th:selected="${cat == category}">Classic</option>
             </select>
+            <!-- Max price filter -->
             <select name="maxPrice" class="filter-sel">
-                <option value="">Any Price</option>
-                <option value="350"  th:selected="${maxPrice == 350}">Up to Rs. 350</option>
-                <option value="400"  th:selected="${maxPrice == 400}">Up to Rs. 400</option>
-                <option value="450"  th:selected="${maxPrice == 450}">Up to Rs. 450</option>
-                <option value="500"  th:selected="${maxPrice == 500}">Up to Rs. 500</option>
+                <option value="" th:selected="${maxPrice == null}">Any Price</option>
+                <option value="300"  th:selected="${maxPrice == 300}">Under Rs. 300</option>
+                <option value="400"  th:selected="${maxPrice == 400}">Under Rs. 400</option>
+                <option value="500"  th:selected="${maxPrice == 500}">Under Rs. 500</option>
+                <option value="700"  th:selected="${maxPrice == 700}">Under Rs. 700</option>
             </select>
-            <button type="submit" class="btn-filter">🔎 Filter</button>
+            <button type="submit" class="btn-filter">🔍 Filter</button>
             <a href="/products" class="btn-clear">✕ Clear</a>
         </form>
 
-        <!-- Result count -->
+        <!-- Result count line -->
         <div class="result-count">
             Showing <strong th:text="${products.size()}">0</strong> brownie(s)
-            <span th:if="${search != null and search != ''}"> for "<strong th:text="${search}"></strong>"</span>
+            <span th:if="${search != null and search != ''}">
+        for "<strong th:text="${search}"></strong>"
+      </span>
         </div>
 
-        <!-- Product Grid -->
+        <!-- ── Product Grid ──────────────────────────────────── -->
         <div class="products-grid">
-            <div th:each="p,i : ${products}" class="product-card"
+            <div th:each="p,i : ${products}"
+                 class="product-card"
                  th:style="'animation-delay:' + ${i.index * 0.05} + 's'">
 
-                <!-- Image -->
-                <div style="position:relative;">
-                    <div class="product-img-placeholder" th:unless="${p.imagePath}">🍫</div>
-                    <div th:if="${p.imagePath}" style="height:190px;overflow:hidden;">
-                        <img th:src="'/' + ${p.imagePath}" th:alt="${p.name}"
-                             style="width:100%;height:100%;object-fit:cover;"/>
-                    </div>
-
-                    <!-- Featured ribbon -->
+                <!-- Product image (or emoji placeholder) -->
+                <div class="product-img-wrap">
+                    <img th:if="${p.imagePath}" th:src="'/' + ${p.imagePath}" th:alt="${p.name}"/>
+                    <span th:unless="${p.imagePath}">🍫</span>
+                    <!-- Featured ribbon badge -->
                     <div class="featured-ribbon" th:if="${p.featured}">⭐ Popular</div>
-
-                    <!-- Stock badge -->
+                    <!-- Stock status badge -->
                     <div th:if="${p.stockLabel == 'In Stock'}"  class="stock-badge stock-in">● In Stock</div>
                     <div th:if="${p.stockLabel == 'Low Stock'}" class="stock-badge stock-low">● Low Stock</div>
                     <div th:if="${p.stockLabel == 'Out of Stock'}" class="stock-badge stock-out">● Out of Stock</div>
                 </div>
 
-                <!-- Body -->
+                <!-- Card body — name, category, description, price, button -->
                 <div class="product-body">
-                    <div class="product-cat" th:text="${p.category}">Classic</div>
+                    <div class="product-cat"  th:text="${p.category}">Classic</div>
                     <div class="product-name" th:text="${p.name}">Brownie Name</div>
-                    <div class="product-desc" th:text="${p.description}">Description here.</div>
+                    <div class="product-desc" th:text="${p.description}">Description.</div>
                     <div class="product-footer">
                         <div class="product-price">
-                            Rs. <span th:text="${#numbers.formatDecimal(p.price,1,'COMMA',2,'POINT')}">350.00</span>
+                            Rs. <span th:text="${#numbers.formatDecimal(p.price,1,'COMMA',2,'POINT')}">350</span>
                         </div>
-                        <a th:if="${p.inStock}" th:href="'/products/' + ${p.id}" class="btn-view">View →</a>
-                        <span th:unless="${p.inStock}" class="btn-view disabled">Sold Out</span>
+                        <!-- View button links to product detail page -->
+                        <a th:if="${p.getInStock()}"
+                           th:href="'/products/' + ${p.id}"
+                           class="btn-view">View →</a>
+                        <span th:unless="${p.getInStock()}" class="btn-view disabled">Sold Out</span>
                     </div>
                 </div>
 
             </div>
         </div>
 
-        <!-- Empty state -->
+        <!-- Empty state when no products match filter -->
         <div class="empty-state">
             <div class="icon">🔍</div>
             <h3>No brownies found</h3>
-            <p>Try a different search term or clear the filters.</p>
+            <p>Try a different search or clear the filters.</p>
         </div>
 
-    </div>
-</div>
+    </div><!-- /content -->
+
+    <!-- ═══════════════════════════════════════════════════
+         SITE FOOTER — Sugar Corner (compact version)
+         Sits inside .main as last child before </div>
+         ═══════════════════════════════════════════════════ -->
+    <footer style="background:linear-gradient(160deg,#2C1810,#1A0D07);
+                   color:rgba(253,246,236,.72);margin-top:auto;padding:0;">
+
+        <!-- Thin wave divider -->
+        <svg viewBox="0 0 1200 30" preserveAspectRatio="none"
+             style="width:100%;display:block;" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#FDF6EC" d="M0,15 C400,30 800,0 1200,15 L1200,0 L0,0 Z"/>
+        </svg>
+
+        <!-- Three-column grid -->
+        <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr;
+                    gap:28px;padding:28px 36px 20px;">
+
+            <!-- Col 1: Brand + contact + socials -->
+            <div>
+                <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px;">
+                    <span style="font-size:22px;">🍫</span>
+                    <span style="font-family:'Playfair Display',serif;font-size:1.05rem;
+                                 color:rgba(253,246,236,.92);">Sugar Corner</span>
+                </div>
+                <p style="font-size:.76rem;color:rgba(253,246,236,.45);
+                           line-height:1.55;margin-bottom:12px;max-width:220px;">
+                    Handcrafted brownies baked with love,<br/>delivered fresh across Sri Lanka.
+                </p>
+                <div style="font-size:.75rem;color:rgba(253,246,236,.5);
+                             display:flex;flex-direction:column;gap:5px;margin-bottom:14px;">
+                    <span>📍 Colombo, Sri Lanka</span>
+                    <span>🕐 Open Daily · 8 AM – 10 PM</span>
+                    <a href="https://tr.ee/3QfscnrEo3" target="_blank" rel="noopener"
+                       style="color:#C68642;text-decoration:none;">💬 Chat on WhatsApp</a>
+                </div>
+
+                <!-- Social buttons — compact, emoji icons like the image -->
+                <div style="display:flex;gap:7px;">
+
+                    <!-- Facebook -->
+                    <a href="https://l.instagram.com/?u=https%3A%2F%2Fwww.facebook.com%2Fshare%2F15f8FQiHcz%2F%3Fmibextid%3DwwXIfr%26utm_source%3Dig%26utm_medium%3Dsocial%26utm_content%3Dlink_in_bio&e=AT4vmwXYZZWGdPX_iamw5cjUrYDXQUB7h0p38flWq4J9suFa2vFoBTFciroc8w-ya-MskS5VuxhSBlF8ud_tHYKaqVYwcnuX8MzeioFnjokPmqxs9QPofn4Lqw"
+                       target="_blank" rel="noopener" title="Facebook"
+                       style="width:34px;height:34px;border-radius:9px;display:flex;
+                              align-items:center;justify-content:center;
+                              background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+                              text-decoration:none;transition:all .2s;"
+                       onmouseover="this.style.background='rgba(66,103,178,.35)';this.style.transform='translateY(-2px)'"
+                       onmouseout="this.style.background='rgba(255,255,255,.07)';this.style.transform='none'">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="#7B9EE8">
+                            <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+                        </svg>
+                    </a>
+
+                    <!-- Instagram -->
+                    <a href="https://tr.ee/-6CBrcau-M" target="_blank" rel="noopener" title="Instagram"
+                       style="width:34px;height:34px;border-radius:9px;display:flex;
+                              align-items:center;justify-content:center;
+                              background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+                              text-decoration:none;transition:all .2s;"
+                       onmouseover="this.style.background='rgba(193,53,132,.35)';this.style.transform='translateY(-2px)'"
+                       onmouseout="this.style.background='rgba(255,255,255,.07)';this.style.transform='none'">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                             stroke="#E870B0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                            <circle cx="12" cy="12" r="4"/>
+                            <circle cx="17.5" cy="6.5" r="1.2" fill="#E870B0" stroke="none"/>
+                        </svg>
+                    </a>
+
+                    <!-- TikTok -->
+                    <a href="https://tr.ee/1sfpiJhMAt" target="_blank" rel="noopener" title="TikTok"
+                       style="width:34px;height:34px;border-radius:9px;display:flex;
+                              align-items:center;justify-content:center;
+                              background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+                              text-decoration:none;transition:all .2s;"
+                       onmouseover="this.style.background='rgba(255,255,255,.15)';this.style.transform='translateY(-2px)'"
+                       onmouseout="this.style.background='rgba(255,255,255,.07)';this.style.transform='none'">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="rgba(253,246,236,.85)">
+                            <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.79 1.53V6.77a4.85 4.85 0 0 1-1.02-.08z"/>
+                        </svg>
+                    </a>
+
+                    <!-- WhatsApp -->
+                    <a href="https://tr.ee/3QfscnrEo3" target="_blank" rel="noopener" title="WhatsApp"
+                       style="width:34px;height:34px;border-radius:9px;display:flex;
+                              align-items:center;justify-content:center;
+                              background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+                              text-decoration:none;transition:all .2s;"
+                       onmouseover="this.style.background='rgba(37,211,102,.25)';this.style.transform='translateY(-2px)'"
+                       onmouseout="this.style.background='rgba(255,255,255,.07)';this.style.transform='none'">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="#5CE89A">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
+                        </svg>
+                    </a>
+
+                </div>
+            </div>
+
+            <!-- Col 2: Shop Hours -->
+            <div>
+                <div style="font-family:'Playfair Display',serif;font-size:.82rem;
+                            color:rgba(253,246,236,.85);margin-bottom:12px;
+                            padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.07);">
+                    Shop Hours
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px;font-size:.75rem;">
+                    <div style="display:flex;justify-content:space-between;">
+                        <span style="color:rgba(253,246,236,.45);">Mon – Fri</span>
+                        <span style="color:#27AE60;font-weight:500;">8 AM – 9 PM</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;">
+                        <span style="color:rgba(253,246,236,.45);">Saturday</span>
+                        <span style="color:#27AE60;font-weight:500;">9 AM – 10 PM</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;">
+                        <span style="color:rgba(253,246,236,.45);">Sunday</span>
+                        <span style="color:#E67E22;font-weight:500;">10 AM – 8 PM</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;">
+                        <span style="color:rgba(253,246,236,.45);">Holidays</span>
+                        <span style="color:#E67E22;font-weight:500;">11 AM – 6 PM</span>
+                    </div>
+                </div>
+                <div style="margin-top:12px;padding:8px 10px;
+                            background:rgba(198,134,66,.1);border-radius:8px;
+                            border:1px solid rgba(198,134,66,.18);
+                            font-size:.72rem;color:rgba(253,246,236,.55);line-height:1.5;">
+                    🚚 <strong style="color:rgba(253,246,236,.75);">Free delivery</strong>
+                    within Colombo for orders above Rs.&nbsp;500
+                </div>
+            </div>
+
+            <!-- Col 3: About -->
+            <div>
+                <div style="font-family:'Playfair Display',serif;font-size:.82rem;
+                            color:rgba(253,246,236,.85);margin-bottom:12px;
+                            padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.07);">
+                    About Us
+                </div>
+                <p style="font-size:.75rem;color:rgba(253,246,236,.45);
+                           line-height:1.6;margin-bottom:10px;">
+                    A home-based brownie shop in Colombo using premium Belgian chocolate
+                    and the finest local ingredients. Every brownie is made to order.
+                </p>
+                <p style="font-size:.75rem;color:rgba(253,246,236,.45);line-height:1.6;">
+                    Custom orders &amp; gift boxes available — message us on WhatsApp!
+                </p>
+                <div style="margin-top:12px;display:flex;align-items:center;gap:6px;">
+                    <span style="color:#F4C430;font-size:.82rem;letter-spacing:2px;">★★★★★</span>
+                    <span style="font-size:.7rem;color:rgba(253,246,236,.35);">Loved by customers</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Bottom bar -->
+        <div style="border-top:1px solid rgba(255,255,255,.06);
+                    padding:10px 36px;
+                    display:flex;align-items:center;justify-content:space-between;
+                    flex-wrap:wrap;gap:8px;">
+            <p style="font-size:.7rem;color:rgba(253,246,236,.3);">
+                © 2025 Sugar Corner · Made with ❤️ in Sri Lanka
+            </p>
+            <a href="/contact"
+               style="font-size:.7rem;color:rgba(253,246,236,.3);text-decoration:none;"
+               onmouseover="this.style.color='#C68642'"
+               onmouseout="this.style.color='rgba(253,246,236,.3)'">Contact Us</a>
+        </div>
+
+    </footer>
+
+</div><!-- /main -->
 
 </body>
 </html>

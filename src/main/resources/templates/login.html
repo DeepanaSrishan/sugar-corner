@@ -9,14 +9,14 @@
         :root {
             --brown-dark:   #2C1810;
             --brown-mid:    #5C3317;
-            --brown-warm:   #8B4513;
-            --caramel:      #C68642;
+            --brown-warm: #8b4513;
+            --caramel: #c68642;
             --cream:        #FDF6EC;
             --cream-dark:   #F5E6D0;
             --gold:         #D4A843;
             --white:        #FFFEF9;
             --text-dark:    #1A0F08;
-            --text-muted:   #7A5C45;
+            --text-muted: #7a5c45;
             --error:        #C0392B;
             --success:      #27AE60;
         }
@@ -34,7 +34,13 @@
         /* ── Left panel ── */
         .panel-left {
             flex: 1;
-            background: linear-gradient(145deg, var(--brown-dark) 0%, var(--brown-mid) 60%, var(--brown-warm) 100%);
+
+            /* 👇 make it transparent overlay */
+            background: rgba(44, 24, 16, 0.75); /* dark glass effect */
+
+            backdrop-filter: blur(6px); /* optional glass effect */
+            -webkit-backdrop-filter: blur(6px);
+
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -43,6 +49,7 @@
             position: relative;
             overflow: hidden;
         }
+
 
         .panel-left::before {
             content: '';
@@ -128,7 +135,13 @@
         /* ── Right panel ── */
         .panel-right {
             width: 480px;
-            background: var(--white);
+
+            /* 👇 transparent glass effect */
+            background: rgba(255, 255, 255, 0.75);
+
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -136,6 +149,7 @@
             overflow-y: auto;
             position: relative;
         }
+
 
         .form-header {
             margin-bottom: 36px;
@@ -319,13 +333,87 @@
             to   { opacity: 1; transform: translateY(0); }
         }
 
+        /* ===================== MOBILE RESPONSIVE ===================== */
         @media (max-width: 768px) {
-            .panel-left { display: none; }
-            .panel-right { width: 100%; padding: 40px 28px; }
+            .panel-left {
+                display: none;   /* ඔයාගේ දැනට තියෙන එක හොඳයි */
+            }
+
+            .panel-right {
+                width: 100%;
+                padding: 35px 25px;     /* ටිකක් අඩු කරන්න */
+                min-height: 100vh;
+            }
+
+            .brand h1 {
+                font-size: 2.2rem;      /* අකුරු අඩු කරන්න */
+            }
+
+            h2 {
+                font-size: 1.75rem;
+            }
+
+            .btn-primary {
+                padding: 16px;
+                font-size: 1.05rem;
+            }
+
+            input[type="email"],
+            input[type="password"] {
+                padding: 14px 14px 14px 42px;
+                font-size: 1rem;        /* ටිකක් ලොකු කරන්න touch සඳහා */
+            }
+
+            .form-header {
+                margin-bottom: 30px;
+            }
+
+            .panel-features, .brand-icon {
+                display: none;   /* mobile වල සරල කරන්න */
+            }
         }
+
+        /* තවත් කුඩා screens සඳහා (iPhone, small phones) */
+        @media (max-width: 480px) {
+            .panel-right {
+                padding: 30px 20px;
+            }
+
+            h2 {
+                font-size: 1.6rem;
+            }
+        }
+        #bg-video {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;        /* cover කරන්න හොඳයි */
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Mobile වල video එක ටිකක් අඩු brightness එකකින් තියන්න */
+        @media (max-width: 768px) {
+            #bg-video {
+                object-fit: cover;
+                filter: brightness(0.65);   /* ටිකක් අඳුරු කරන්න */
+            }
+        }
+
     </style>
 </head>
 <body>
+<video id="bg-video"
+       src="/videos/v4.mp4"
+       autoplay
+       muted
+       loop
+       playsinline
+       preload="auto"
+       aria-hidden="true">
+    <!-- Fallback: if browser can't play the video, nothing broken -->
+</video>
 
 <!-- LEFT PANEL -->
 <div class="panel-left">
@@ -378,6 +466,7 @@
                 <input type="password" id="password" name="password" placeholder="••••••••" required/>
             </div>
         </div>
+
 
         <div class="form-row">
             <label class="remember">

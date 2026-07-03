@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Inquiries – Sugar Corner Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <style>
+        :root{--dark:#111;--dark2:#1a1a1a;--accent:#C68642;--accent2:#8B4513;
+            --cream:#FDF6EC;--muted:#888;--sidebar-w:260px;
+            --success:#51CF66;--error:#FF6B6B;--warn:#FFA94D;--border:rgba(255,255,255,.07);}
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:'DM Sans',sans-serif;background:#0f0f0f;color:#e8e0d8;display:flex;min-height:100vh;}
+        .sidebar{width:var(--sidebar-w);background:var(--dark);position:fixed;top:0;left:0;height:100vh;
+            display:flex;flex-direction:column;padding:28px 0;border-right:1px solid var(--border);z-index:100;}
+        .sidebar-brand{text-align:center;padding:0 24px 28px;border-bottom:1px solid var(--border);}
+        .sidebar-brand .logo{font-size:36px;display:block;margin-bottom:8px;}
+        .sidebar-brand h2{font-family:'Playfair Display',serif;font-size:1.25rem;
+            background:linear-gradient(135deg,var(--cream),var(--accent));
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+        .role-badge{display:inline-block;margin-top:6px;padding:3px 12px;background:rgba(196,134,66,.2);
+            color:var(--accent);border:1px solid rgba(196,134,66,.3);border-radius:100px;font-size:.7rem;text-transform:uppercase;}
+        nav{flex:1;padding:8px 16px;overflow-y:auto;}
+        .nav-section{font-size:.65rem;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.25);padding:16px 12px 6px;}
+        .nav-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;margin-bottom:3px;
+            color:rgba(255,255,255,.55);font-size:.86rem;text-decoration:none;transition:all .2s;}
+        .nav-item:hover,.nav-item.active{background:rgba(196,134,66,.15);color:var(--cream);}
+        .nav-item.active{border-left:3px solid var(--accent);padding-left:11px;}
+        .nav-icon{font-size:16px;width:20px;text-align:center;}
+        .nav-badge{margin-left:auto;padding:2px 8px;background:rgba(255,107,107,.25);color:#FF8A80;border-radius:100px;font-size:.7rem;}
+        .sidebar-footer{padding:16px;border-top:1px solid var(--border);}
+        .logout-btn{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;
+            color:rgba(255,255,255,.4);font-size:.84rem;text-decoration:none;transition:all .2s;}
+        .logout-btn:hover{background:rgba(255,107,107,.1);color:#FF8A80;}
+        .main{margin-left:var(--sidebar-w);flex:1;}
+        .topbar{background:var(--dark2);padding:18px 36px;border-bottom:1px solid var(--border);
+            display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+        .topbar-left{display:flex;align-items:center;gap:10px;}
+        .topbar-left a{color:var(--muted);font-size:.84rem;text-decoration:none;}
+        .topbar-left a:hover{color:var(--accent);}
+        .topbar-left .sep{color:var(--muted);}
+        .topbar h1{font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--cream);}
+        .content{padding:28px 36px;}
+
+        .alert{padding:12px 18px;border-radius:10px;font-size:.875rem;margin-bottom:18px;display:flex;align-items:center;gap:8px;}
+        .alert-success{background:rgba(81,207,102,.1);border:1px solid rgba(81,207,102,.25);color:var(--success);}
+
+        /* Filter tabs */
+        .filter-tabs{display:flex;gap:8px;margin-bottom:20px;}
+        .ftab{padding:7px 18px;border-radius:100px;font-size:.8rem;font-weight:500;
+            text-decoration:none;border:1px solid var(--border);color:var(--muted);transition:all .2s;}
+        .ftab:hover,.ftab.active{background:rgba(196,134,66,.15);color:var(--cream);border-color:rgba(196,134,66,.3);}
+
+        /* Inquiry cards */
+        .inq-list{display:flex;flex-direction:column;gap:10px;}
+        .inq-card{background:var(--dark2);border-radius:14px;border:1px solid var(--border);
+            padding:16px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+            animation:fadeSlideUp .4s ease both;}
+        .inq-card:hover{border-color:rgba(196,134,66,.3);}
+        .inq-avatar{width:40px;height:40px;border-radius:50%;
+            background:linear-gradient(135deg,var(--accent2),var(--accent));
+            display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:white;flex-shrink:0;}
+        .inq-info{flex:1;min-width:200px;}
+        .inq-subject{font-weight:600;color:var(--cream);font-size:.9rem;}
+        .inq-meta{font-size:.75rem;color:var(--muted);margin-top:3px;}
+        .inq-preview{font-size:.8rem;color:rgba(255,255,255,.45);margin-top:4px;
+            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;}
+
+        .chip{display:inline-flex;padding:4px 12px;border-radius:100px;font-size:.72rem;font-weight:600;}
+        .chip-orange{background:rgba(255,169,77,.12);color:var(--warn);}
+        .chip-blue  {background:rgba(41,128,185,.12);color:#5dade2;}
+        .chip-green {background:rgba(81,207,102,.12);color:var(--success);}
+
+        .inq-actions{display:flex;gap:8px;flex-shrink:0;}
+        .btn-chat{padding:7px 16px;background:rgba(196,134,66,.15);color:var(--accent);
+            border-radius:9px;text-decoration:none;font-size:.8rem;font-weight:500;transition:all .2s;border:none;cursor:pointer;}
+        .btn-chat:hover{background:rgba(196,134,66,.28);}
+        .btn-resolve{padding:7px 16px;background:rgba(81,207,102,.12);color:var(--success);
+            border-radius:9px;font-size:.8rem;font-weight:500;border:none;cursor:pointer;transition:all .2s;}
+        .btn-resolve:hover{background:rgba(81,207,102,.25);}
+
+        .new-badge{background:rgba(255,107,107,.25);color:#FF8A80;padding:2px 8px;border-radius:100px;
+            font-size:.7rem;font-weight:700;margin-left:6px;}
+
+        .empty-state{text-align:center;padding:56px 20px;}
+        .empty-state .icon{font-size:44px;margin-bottom:10px;}
+        .empty-state p{color:var(--muted);font-size:.9rem;}
+
+        @keyframes fadeSlideUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+        @media(max-width:900px){.sidebar{display:none;}.main{margin-left:0;}}
+        @media(max-width:640px){.content{padding:16px;}}
+
+        /* ── Admin profile card in sidebar ─────────────────────
+           These rules were missing from non-dashboard pages,
+           causing the admin-info block to render unstyled.      */
+        .admin-info { margin:16px 14px; background:rgba(196,134,66,.08);
+            border:1px solid rgba(196,134,66,.15); border-radius:13px;
+            padding:13px; display:flex; align-items:center; gap:11px; }
+        .admin-avatar { width:42px; height:42px; border-radius:50%;
+            background:linear-gradient(135deg,var(--accent2,#8B4513),var(--accent,#C68642));
+            display:flex; align-items:center; justify-content:center;
+            font-size:18px; color:#fff; font-weight:600; flex-shrink:0; }
+        .admin-name  { font-size:.88rem; color:var(--cream,#FDF6EC); font-weight:500; }
+        .admin-role  { font-size:.72rem; color:var(--accent,#C68642); margin-top:2px; }
+    </style>
+</head>
+<body>
+<!-- SIDEBAR — fixed, identical across all admin pages -->
+<aside class="sidebar">
+    <div class="sidebar-brand">
+        <span class="logo">🍫</span>
+        <h2>Sugar Corner</h2>
+        <span class="role-badge">Admin Panel</span>
+    </div>
+    <div class="admin-info">
+        <div class="admin-avatar" style="font-size:18px;">🛡️</div>
+        <div>
+            <div class="admin-name">Administrator</div>
+            <div class="admin-role">Sugar Corner Admin</div>
+        </div>
+    </div>
+    <nav>
+        <a class="nav-item" href="/admin/dashboard"><span class="nav-icon">📊</span> Dashboard</a>
+        <a class="nav-item" href="/admin/customers"><span class="nav-icon">👥</span> All Customers</a>
+        <a class="nav-item" href="/admin/products"><span class="nav-icon">🍫</span> All Products</a>
+        <a class="nav-item" href="/admin/products/add"><span class="nav-icon">➕</span> Add Product</a>
+        <a class="nav-item" href="/admin/orders"><span class="nav-icon">📦</span> All Orders
+            <span class="nav-badge" th:if="${notifCount != null and notifCount > 0}" th:text="${notifCount}">0</span>
+        </a>
+        <a class="nav-item" href="/admin/payments"><span class="nav-icon">💳</span> All Payments</a>
+        <a class="nav-item active" href="/admin/contact/inquiries"><span class="nav-icon">💬</span> Inquiries
+            <span class="nav-badge" th:if="${newCount != null and newCount > 0}" th:text="${newCount}">0</span>
+        </a>
+        <a class="nav-item" href="/admin/contact/feedback"><span class="nav-icon">⭐</span> Feedback</a>
+    </nav>
+    <div class="sidebar-footer">
+        <a class="logout-btn" href="/logout"><span>🚪</span> Sign Out</a>
+    </div>
+</aside>
+
+<div class="main">
+    <div class="topbar">
+        <div class="topbar-left">
+            <a href="/admin/dashboard">Dashboard</a>
+            <span class="sep">›</span>
+            <h1>Customer Inquiries</h1>
+        </div>
+        <div style="font-size:.82rem;color:var(--muted);">
+      <span th:if="${newCount > 0}" style="color:#FF8A80;font-weight:600;"
+            th:text="${newCount} + ' unread'">0 unread</span>
+            <span th:unless="${newCount > 0}" style="color:var(--success);">✓ All read</span>
+        </div>
+    </div>
+    <div class="content">
+
+        <div th:if="${param.success != null}" class="alert alert-success">
+            ✅ Inquiry resolved.
+        </div>
+
+        <!-- Filter tabs -->
+        <div class="filter-tabs">
+            <a class="ftab" th:classappend="${filterStatus == null} ? 'active' : ''"
+               href="/admin/contact/inquiries">All</a>
+            <a class="ftab" th:classappend="${filterStatus == 'NEW'} ? 'active' : ''"
+               href="/admin/contact/inquiries?status=NEW">🆕 New</a>
+            <a class="ftab" th:classappend="${filterStatus == 'IN_PROGRESS'} ? 'active' : ''"
+               href="/admin/contact/inquiries?status=IN_PROGRESS">💬 In Progress</a>
+            <a class="ftab" th:classappend="${filterStatus == 'RESOLVED'} ? 'active' : ''"
+               href="/admin/contact/inquiries?status=RESOLVED">✅ Resolved</a>
+        </div>
+
+        <!-- Inquiry list -->
+        <div class="inq-list">
+            <div th:each="inq,i : ${inquiries}" class="inq-card"
+                 th:style="'animation-delay:' + ${i.index * 0.04} + 's'">
+                <div class="inq-avatar"
+                     th:text="${inq.customerFirstName != null} ? ${inq.customerFirstName.substring(0,1).toUpperCase()} : 'C'">C</div>
+                <div class="inq-info">
+                    <div class="inq-subject">
+                        <span th:text="${inq.subject}">Subject</span>
+                        <span class="new-badge" th:if="${inq.status == 'NEW'}">NEW</span>
+                    </div>
+                    <div class="inq-meta">
+                        <span th:text="${inq.customerFullName}">Customer</span>
+                        &nbsp;·&nbsp;
+                        <span th:text="${inq.customerEmail}">email</span>
+                        &nbsp;·&nbsp;
+                        <span th:text="${inq.createdAt != null} ? ${#temporals.format(inq.createdAt,'dd MMM yyyy')} : ''"></span>
+                    </div>
+                    <div class="inq-preview" th:text="${inq.message}">Message preview…</div>
+                </div>
+                <span class="chip"
+                      th:classappend="${inq.status == 'NEW'} ? 'chip-orange' :
+                               (${inq.status == 'IN_PROGRESS'} ? 'chip-blue' : 'chip-green')"
+                      th:text="${inq.statusLabel}">Status</span>
+                <div class="inq-actions">
+                    <a th:href="'/admin/contact/chat/' + ${inq.id}" class="btn-chat">💬 Chat</a>
+                    <form th:if="${inq.status != 'RESOLVED'}"
+                          method="POST" th:action="'/admin/contact/inquiries/' + ${inq.id} + '/resolve'">
+                        <button type="submit" class="btn-resolve">✅ Resolve</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="empty-state">
+            <div class="icon">💬</div>
+            <p>No inquiries found.</p>
+        </div>
+
+    </div>
+</div>
+</body>
+</html>
